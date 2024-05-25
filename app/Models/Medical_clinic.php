@@ -22,7 +22,7 @@ class Medical_clinic extends Model
         'days'=>'array'
     ];
 
-
+// all doctors work with this clinic
 public function medical_doctor()
 {
     return $this->hasMany(medical_clinic_doctor::class);

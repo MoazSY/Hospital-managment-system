@@ -8,9 +8,11 @@ use App\Models\Laboratory;
 use App\Models\Laboratory_section;
 use App\Models\Magnetic_resonnance_imaging;
 use App\Models\Medical_clinic;
+use App\Models\medical_clinic_doctor;
 use App\Models\Nurse;
 use App\Models\Operation_rooms;
 use App\Models\Operation_section;
+use App\Models\Docor_operation_section;
 use App\Models\Radiation_section;
 use App\Models\Reseption_employee;
 use App\Models\User;
@@ -141,7 +143,10 @@ if(!$user || !Hash::check($credentials['password'],$user->password)){
         ]);
         return response()->json(['message'=>'doctor add successfully','doctor'=>$doctor]);
     }
-
+  }
+  public function delete_doctor(Request $request){
+    Doctor::where('id','=',$request->id)->first()->delete();
+    return Response()->json(['message'=>'doctor deleted successfully']);
   }
 public function add_section_operation(Request $request){
         $validate=Validator::make($request->all(),[
@@ -160,6 +165,13 @@ public function add_section_operation(Request $request){
             'doctors_id'=>$request->doctors_id,
         ]);
         return Response()->json(['message'=>'operation_section added successfully','operation_section'=>$operation]);
+}
+public function delete_section_operation(Request $request){
+Operation_section::where('id','=',$request->id)->first()->delete();
+return response()->json(['message'=>'operation section deleted successfully']);
+}
+public function update_section_operation(Request $request){
+    Operation_section::where('id','=',$request->id)->first()->update($request->all());
 }
 public function add_nurse(Request $request){
     $validate=Validator::make($request->all(),[
@@ -199,6 +211,10 @@ public function add_nurse(Request $request){
         return Response()->json(['message'=>'nurse added successfully','nurse'=>$nurse]);
     }
 
+}
+public function deleteNurse(Request $request){
+    Nurse::where('id','=',$request->id)->first()->delete();
+    return Response()->json(['message'=>'nurse deleted successfully']);
 }
 public function add_laboratory(Request $request){
 
@@ -242,7 +258,10 @@ public function add_laboratory(Request $request){
         ]);
         return Response()->json(['message'=>'laboratory added successfully','laboratory'=>$laboratory]);
     }
-
+}
+public function deleteLaboratory(Request $request){
+    Laboratory::where('id','=',$request->id)->first()->delete();
+    return response()->json(['message'=>'laboratory deleted successfully']);
 }
 public function add_accounter(Request $request){
     $validate=Validator::make($request->all(),[
@@ -289,7 +308,10 @@ public function add_accounter(Request $request){
         ]);
         return Response()->json(['message'=>'accounter added successfully','accounter'=>$accounter]);
     }
-
+}
+public function deleteAccounter(Request $request){
+    Accounter::where('id','=',$request->id)->first()->delete();
+    return response()->json(['message'=>'accounter deleted seccessfuly']);
 }
 public function add_operation_rooms(Request $request){
 
@@ -308,7 +330,14 @@ public function add_operation_rooms(Request $request){
     ]);
     return Response()->json(['message'=>'operation room added successfully','operation room'=>$rooms]);
 }
-
+public function delete_operation_room(Request $request){
+    Operation_rooms::where('id','=',$request->id)->first()->delete();
+    return response()->json(['message'=>'operation room deleted successfully']);
+}
+public function update_operation_room(Request $request){
+    Operation_rooms::where('id','=',$request->id)->first()->update($request->all());
+    return response()->json(['message'=>'operation room updated successfully']);
+}
 public function add_reseption_employee(Request $request){
     $validate=Validator::make($request->all(),[
         'name'=>'required',
@@ -320,7 +349,6 @@ public function add_reseption_employee(Request $request){
         'email'=>'required|email|unique:reseption_employee',
         'section_name'=>'required',
         'id_section'=>'required'
-
     ]);
     if($validate->fails()){
         return Response()->json(['message'=>$validate->errors()]);
@@ -356,6 +384,14 @@ public function add_reseption_employee(Request $request){
         return Response()->json(['message'=>'employee added successfully','employee'=>$reseption]);
     }
 }
+public function delete_employee_reseption(Request $request){
+    Reseption_employee::where('id','=',$request->id)->first()->delete();
+    return response()->json(['message'=>'reseption employee deleted successfuly']);
+}
+public function update_employee_reseption(Request $request){
+    Reseption_employee::where('id','=',$request->id)->first()->update($request->all());
+    return response()->json(['message'=>'reseption employee update successfuly']);
+}
 public function add_radiation_section(Request $request){
     $validate=Validator::make($request->all(),[
         'doctors_id'=>'required',
@@ -377,6 +413,14 @@ public function add_radiation_section(Request $request){
     ]);
     return response()->json(['message'=>'radiation_section added successfully','radiation_section'=>$radiation]);
 }
+public function delete_radiation_section(Request $request){
+    Radiation_section::where('id','=',$request->id)->first()->delete();
+    return response()->json(['message'=>'radiation section deleted successfully']);
+}
+public function update_radiation_section(Request $request){
+    Radiation_section::where('id','=',$request->id)->first()->update($request->all());
+    return response()->json(['message'=>'radiation section updated successfully']);
+}
 public function add_magnitic_section(Request $request){
     $validate=Validator::make($request->all(),[
     'doctors_id'=>'required',
@@ -397,8 +441,15 @@ public function add_magnitic_section(Request $request){
     ]);
     return response()->json(['message'=>'magnetic section added successfully','magnetic'=>$magnitic]);
 }
+public function delete_magnitic_section(Request $request){
+    Magnetic_resonnance_imaging::where('id','=',$request->id)->first()->delete();
+    return response()->json(['message'=>'magnitic section deleted successfully']);
+}
+public function update_magnitic_section(Request $request){
+    Magnetic_resonnance_imaging::where('id','=',$request->id)->first()->update($request->all());
+    return response()->json(['message'=>'magnitic section updated successfully']);
+}
 public function add_laboratory_section(Request $request){
-
     $validate=Validator::make($request->all(),[
         'type_laboratory'=>'required',
         'address'=>'required',
@@ -417,6 +468,14 @@ public function add_laboratory_section(Request $request){
         'laboratorys_id'=>$request->laboratorys_id
         ]);
         return response()->json(['message'=>'laboratory section added successfully','laboratory section'=>$laboratory_section]);
+}
+public function delete_laboratory_section(Request $request){
+    Laboratory_section::where('id','=',$request->id)->first()->delete();
+    return response()->json(['message'=>'laboratory section deleted successfully']);
+}
+public function update_laboratory_section(Request $request){
+    Laboratory_section::where('id','=',$request->id)->first()->update($request->all());
+    return response()->json(['message'=>'laboratory section updated successfully']);
 }
 public function add_consumer_employee(Request $request){
     $validate=Validator::make($request->all(),[
@@ -462,6 +521,10 @@ public function add_consumer_employee(Request $request){
         ]);
         return Response()->json(['message'=>'employee added successfully','employee'=>$consumer]);
     }
+}
+public function delete_consumer_employee(Request $request){
+    Consumer_employee::where('id','=',$request->id)->first()->delete();
+    return response()->json(['message'=>'consumer employee deleted successfully']);
 }
  public function operation_secion() {
 //    $query=Operation_section::query();
@@ -509,6 +572,130 @@ public function getLaboratory(){
     }
         return response()->json(['laboratory name and id'=>$array]);
 }
+public function add_medical_clinic(Request $request){
+
+    $validate=Validator::make($request->all(),[
+        'name'=>'required',
+        'start_time'=>'required|date',
+        'end_time'=>'required|date',
+        'days'=>'required|array',
+        'address'=>'required',
+        'contact_info'=>'required',
+        'info_clinic'=>'required'
+    ]);
+    if($validate->fails()){
+        return Response()->json(['message'=>$validate->errors()]);
+    }
+    $medicalClinic=Medical_clinic::create([
+        'name'=>$request->name,
+        'start_time'=>$request->start_time,
+        'end_time'=>$request->end_time,
+        'days'=>$request->days,
+        'address'=>$request->address,
+        'contact_info'=>$request->contact_info,
+        'info_clinic'=>$request->info_clinic
+    ]);
+    return response()->json(['message'=>'medical clinic added successfully','clinic'=>$medicalClinic]);
+
+}
+public function delete_medical_clinic(Request $request){
+    Medical_clinic::where('id','=',$request->id)->first()->delete();
+    return response()->json(['message'=>'medical clinic deleted successfully']);
+}
+public function update_medical_clinic(Request $request){
+    Medical_clinic::where('id','=',$request->id)->first()->update($request->all());
+    return response()->json(['message'=>'medical clinic updated successfully']);
+}
+public function  get_medical_clinic(){
+    $clinic=Medical_clinic::select('name','id')->get();
+    $array=[];
+    foreach($clinic as $d){
+        $name=$d->name;
+        $id=$d->id;
+        $array=array(
+            'id'=>$id,
+            'name'=>$name
+        );
+    }
+        return response()->json(['clinic name and id'=>$array]);
+}
+public function add_doctor_clinic(Request $request){
+    $validate=Validator::make($request->all(),[
+        'price'=>'required',
+        'start_time'=>'required|date',
+        'end_time'=>'required|date',
+        'days'=>'required|array',
+        'medical_clinic_id'=>'required',
+        'doctors_id'=>'required',
+    ]);
+    if($validate->fails()){
+        return Response()->json(['message'=>$validate->errors()]);
+    }
+    $medicalClinic=Medical_clinic::create([
+        'price'=>$request->price,
+        'start_time'=>$request->start_time,
+        'end_time'=>$request->end_time,
+        'days'=>$request->days,
+        'medical_clinic_id'=>$request->medical_clinic_id,
+        'doctors_id'=>$request->doctors_id,
+    ]);
+    return response()->json(['message'=>'medical clinic added successfully','clinic'=>$medicalClinic]);
+}
+public function update_medical_clinic_doctor(Request $request){
+    medical_clinic_doctor::where('id','=',$request->id)->first()->update($request->all());
+    return response()->json(['message'=>'medical clinic doctor updated successfully']);
+}
+public function add_operation_section_doctor(Request $request){
+$validate=Validator::make($request->all(),[
+    'startWorkTime'=>'required|date',
+    'endWorkTime'=>'required|date',
+    'days'=>'required|array',
+    'operation_sections_id'=>'required',
+    'doctors_id'=>'required',
+]);
+if($validate->fails()){
+    return Response()->json(['message'=>$validate->errors()]);
+}
+$docor_operation=Doctor_operation_section ::create([
+    'startWorkTime'=>$request->startWorkTime,
+    'endWorkTime'=>$request->endWorkTime,
+    'days'=>$request->days,
+    'operation_sections_id'=>$request->operation_sections_id,
+    'doctors_id'=>$request->doctors_id,
+]);
+return Response()->json(['message'=>'operation section doctor added successfully','doctor operation section'=>$docor_operation]);
+}
+public function update_operation_section_doctor(Request $request){
+    Docor_operation_section::where('id','=',$request->id)->first()->update($request->all());
+    return response()->json(['message'=>'doctor operation section updated successfully']);
+}
+public function add_nurse_section(Request $request){
+
+
+    $validate=Validator::make($request->all(),[
+        'startTime'=>'required|date',
+        'endTime'=>'required|date',
+        'days'=>'required|array',
+        'operation_sections_id'=>'required',
+        'nurses_id'=>'required',
+    ]);
+    if($validate->fails()){
+        return Response()->json(['message'=>$validate->errors()]);
+    }
+    $nurse_operation=Nurse_section::create([
+        'nurses_id'=>$request->nurses_id,
+        'operation_sections_id'=>$request->operation_sections_id,
+        'startTime'=>$request->startTime,
+        'endTime'=>$request->endTime,
+        'days'=>$request->days
+    ]);
+return Response()->json(['message'=>'operation section nurse added successfully','nurse operation section'=>$nurse_operation]);
+}
+public function update_nurse_doctor(Request $request){
+    Nurse_section::where('id','=',$request->id)->first()->update($request->all());
+    return response()->json(['message'=>'doctor operation section updated successfully']);
+}
+
 public function uploadeImage(Request $request)
 {
     $validator = Validator::make($request->all(), [
