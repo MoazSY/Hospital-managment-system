@@ -29,7 +29,6 @@ class Patient extends Authenticatable
         'contact_info_companany'
 
 ];
-
 public function details_visit()
 {
     return $this->hasMany(Visit_details::class);

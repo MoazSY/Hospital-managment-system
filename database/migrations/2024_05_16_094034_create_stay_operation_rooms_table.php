@@ -16,9 +16,9 @@ return new class extends Migration
             $table->foreignId('patient_id')->references('id')->on('patient')->onDelete('cascade');
             $table->foreignId('operation_rooms_id')->references('id')->on('operation_rooms')->onDelete('cascade');
             $table->time('enter_time');
-            $table->time('out_time');
+            $table->time('out_time')->nullable();
             $table->date('enter_date');
-            $table->date('out_date');
+            $table->date('out_date')->nullable();
             $table->timestamps();
         });
     }

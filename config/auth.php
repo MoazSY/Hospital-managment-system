@@ -45,35 +45,35 @@ return [
             'provider'=>'hospital_manager',
         ],
         'accounter'=>[
-            'driver'=>'session',
+            'driver'=>'sanctum',
             'provider'=>'accounter',
         ],
         'consumer_employee'=>[
-            'driver'=>'session',
+            'driver'=>'sanctum',
             'provider'=>'consumer_employee',
         ],
         'doctor'=>[
-            'driver'=>'session',
+            'driver'=>'sanctum',
             'provider'=>'doctor',
         ],
         'laboratory'=>[
-            'driver'=>'session',
+            'driver'=>'sanctum',
             'provider'=>'laboratory',
         ],
         'nurse'=>[
-            'driver'=>'session',
+            'driver'=>'sanctum',
             'provider'=>'nurse',
         ],
         'patient'=>[
-            'driver'=>'session',
+            'driver'=>'sanctum',
             'provider'=>'patient',
         ],
         'warehouse_manager'=>[
-            'driver'=>'session',
+            'driver'=>'sanctum',
             'provider'=>'warehouse_manager',
         ],
         'reseption_employee'=>[
-            'driver'=>'session',
+            'driver'=>'sanctum',
             'provider'=>'reseption_employee',
         ],
 

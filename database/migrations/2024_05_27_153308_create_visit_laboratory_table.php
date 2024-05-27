@@ -11,10 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('visit_details', function (Blueprint $table) {
+        Schema::create('visit_laboratory', function (Blueprint $table) {
             $table->id();
             $table->foreignId('patient_id')->references('id')->on('patient')->onDelete('cascade');
-            $table->foreignId('doctors_id')->references('id')->on('doctors')->onDelete('cascade');
+            $table->foreignId('laboratorys_id')->references('id')->on('laboratorys')->onDelete('cascade');
             $table->date('enterDate');
             $table->time('enterTime')->nullable();
             $table->time('endTime')->nullable();
@@ -30,6 +30,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('visit_details');
+        Schema::dropIfExists('visit_laboratory');
     }
 };

@@ -11,7 +11,10 @@ class Line_queue extends Model
     protected $table='line_queue';
     protected $fillable=[
         'patient_id',
-        'num_char'
+        'num_char',
+        'position',
+        'section_name',
+        'section_id'
     ];
 
     public function patient()

@@ -15,6 +15,9 @@ return new class extends Migration
             $table->id();
             $table->foreignId('patient_id')->references('id')->on('patient')->onDelete('cascade');
             $table->string('num_char');
+            $table->integer('position')->nullable();
+            $table->string('section_name');
+            $table->integer('section_id');
             $table->timestamps();
         });
     }
