@@ -18,6 +18,7 @@ use App\Models\Nurse_section;
 use App\Models\Radiation_section;
 use App\Models\Reseption_employee;
 use App\Models\User;
+use Illuminate\Support\Facades\Schema;
 use Dotenv\Validator as DotenvValidator;
 use GuzzleHttp\Psr7\Response;
 use Illuminate\Http\Request;
@@ -90,12 +91,13 @@ if($validate->fails()){
     $userType = null;
     // Check each table for the username
     foreach ($userTables as $table => $model) {
+        if (Schema::hasColumn($table, 'userName')){
         $user = $model::where('userName', $credentials['userName'])->first();
         if ($user) {
             $userType = $table;
             break;
         }
-    }
+    }}
     // If no user found, return error
     if (!$user) {
         return response()->json(['message' => 'Invalid username '], 400);
