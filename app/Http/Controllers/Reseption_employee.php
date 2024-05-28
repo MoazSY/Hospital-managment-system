@@ -24,30 +24,6 @@ use Nette\Utils\Random;
 
 class Reseption_employee extends Controller
 {
-public function login(Request $request){
-    $validate=Validator::make($request->all(),[
-    'userName'=>'required',
-    'password'=>'required|alpha_num'
-    ]);
-    if($validate->fails()){
-        return response()->json(['message'=>$validate->errors(),400]);
-    }
-    $credentials = $request->only('userName', 'password');
-    $user=ModelsReseption_employee::where('userName','=',$credentials['userName'])->first();
-    if(!$user || !Hash::check($credentials['password'],$user->password)){
-        if(!ModelsReseption_employee::where('userName','=',$credentials['userName'])->first()){
-            return response()->json(['message'=>' error userName'." ". $credentials['userName']." ".'resend Right value'],400);
-        }
-        if(!ModelsReseption_employee::where('password','=',$credentials['password'])->first()){
-            return response()->json(['message'=>' error password' ." ". $credentials['password'] ." ".'resend Right value'],400);
-        }
-        return response()->json(['message'=>' error value resend right value'],200);
-    }
-      $reseption=ModelsReseption_employee::where('userName','=',$credentials['userName'])->first();
-
-      $token=$reseption->createToken('authToken')->plainTextToken;
-      return response()->json(['message'=>'login successfully','reseption'=>$reseption,'section'=>$reseption->section_name,'token'=>$token]);
-}
 public function update_employee_reseption(Request $request,ModelsReseption_employee $employee){
     ModelsReseption_employee::where('id','=',$employee->id)->first()->update($request->all());
     $update=ModelsReseption_employee::where('id','=',$employee->id)->first();

@@ -28,10 +28,11 @@ use Illuminate\Database\Query\Builder;
 use Illuminate\Validation\Validator as ValidationValidator;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Carbon\Carbon;
+use App\Http\Requests\StoreUserRequest;
 use Illuminate\Support\Facades\Storage;
 class HospitalManager extends Controller
 {
-      public function Register(Request $request){
+      public function Register(Request $request,StoreUserRequest $requestUserName){
 
     $validate=Validator::make($request->all(),[
         'name'=>'required',
@@ -53,7 +54,7 @@ class HospitalManager extends Controller
         'birthdate'=>$request['birthdate'],
         'phoneNumber'=>$request['phoneNumber'],
         'about_him'=>$request['about_him'],
-        'userName'=>$request['userName'],
+        'userName'=>$requestUserName['userName'],
         'password'=>Hash::make($request['password']),
         'email'=>$request['email'],
         'address'=>$request->address
@@ -63,9 +64,8 @@ class HospitalManager extends Controller
     return Response()->json(['hospitalManager'=>$hospitalM,'token'=>$token]);
 
   }
-  public function login(Request $request){
-
-$validate=Validator::make($request->all(),[
+  public function login(Request  $request){
+    $validate=Validator::make($request->all(),[
   'userName'=>'required',
   'password'=>'required|min:8|alpha_num'
 ]);
@@ -73,24 +73,47 @@ $validate=Validator::make($request->all(),[
 if($validate->fails()){
   return Response()->json(['error'=>$validate->errors()],400);
 }
-
-
-$credentials = $request->only('userName', 'password');
-$user=Hospital_manager::where('userName','=',$credentials['userName'])->first();
-if(!$user || !Hash::check($credentials['password'],$user->password)){
-    if(!Hospital_manager::where('userName','=',$credentials['userName'])->first()){
-        return response()->json(['message'=>' error userName'." ". $credentials['userName']." ".'resend Right value'],400);
+    $credentials = $request->only('userName', 'password');
+    // List of user tables
+    $userTables = [
+        'hospital_manager' => \App\Models\Hospital_Manager::class,
+        'doctors' => \App\Models\Doctor::class,
+        'reseption_employee' => \App\Models\Reseption_employee::class,
+        'nurses' => \App\Models\Nurse::class,
+        'warehouse_manager' => \App\Models\Warehouse_manager::class,
+        'accounter' => \App\Models\Accounter::class,
+        'laboratorys' => \App\Models\Laboratory::class,
+        'consumer_employee' => \App\Models\Consumer_employee::class,
+        'patient' => \App\Models\Patient::class
+    ];
+    $user = null;
+    $userType = null;
+    // Check each table for the username
+    foreach ($userTables as $table => $model) {
+        $user = $model::where('userName', $credentials['userName'])->first();
+        if ($user) {
+            $userType = $table;
+            break;
+        }
     }
-    if(!Hospital_manager::where('password','=',$credentials['password'])->first()){
-        return response()->json(['message'=>' error password' ." ". $credentials['password'] ." ".'resend Right value'],400);
+    // If no user found, return error
+    if (!$user) {
+        return response()->json(['message' => 'Invalid username '], 400);
     }
-    return response()->json(['message'=>' error value resend right value'],200);
-}
-  $hospitalM=Hospital_manager::where('userName','=',$credentials['userName'])->first();
-  $token=$hospitalM->createToken('authToken')->plainTextToken;
-  return response()->json(['message'=>'login successfully','manager'=>$hospitalM,'token'=>$token]);
+    // Check password
+    if (!Hash::check($credentials['password'], $user->password)) {
+        return response()->json(['message' => 'Invalid password'], 400);
+    }
+    // Generate token for authenticated user
+    $token = $user->createToken('authToken')->plainTextToken;
+    return response()->json([
+        'message' => 'Login successfully',
+        'user' => $user,
+        'token' => $token,
+        'user_type' => $userType
+    ]);
   }
-  public function add_doctor(Request $request){
+  public function add_doctor(Request $request,StoreUserRequest $requestUserName){
 
     $validate=Validator::make($request->all(),[
         'name'=>'required',
@@ -105,7 +128,7 @@ if(!$user || !Hash::check($credentials['password'],$user->password)){
         'address'=>'required'
     ]);
     if($validate->fails()){
-        return response()->json(['message'=>'error',$validate->errors()]);
+        return response()->json(['message'=>$validate->errors()]);
     }
 
     if($request->hasFile('image')){
@@ -114,8 +137,8 @@ if(!$user || !Hash::check($credentials['password'],$user->password)){
             'image'=>$this->uploadeImage($request),
             'birthdate'=>$request['birthdate'],
             'about_him'=>$request['about_him'],
-            'userName'=>$request['userName'],
-            'password'=>$request->password,
+            'userName'=>$requestUserName['userName'],
+            'password'=>Hash::make($request->password),
             'specialization'=>$request->specialization,
             'contact_info'=>$request->contact_info,
             'phoneNumber'=>$request->phoneNumber,
@@ -131,8 +154,8 @@ if(!$user || !Hash::check($credentials['password'],$user->password)){
             'name'=>$request->name,
             'birthdate'=>$request->birthdate,
             'about_him'=>$request->about_him,
-            'userName'=>$request->userName,
-            'password'=>$request->password,
+            'userName'=>$requestUserName->userName,
+            'password'=>Hash::make($request->password),
             'specialization'=>$request->specialization,
             'contact_info'=>$request->contact_info,
             'phoneNumber'=>$request->phoneNumber,
@@ -175,7 +198,7 @@ public function update_section_operation(Request $request,Operation_section $sec
    $operation= Operation_section::where('id','=',$section->id)->first();
 return response()->json(['message'=>'operation section updated successfully','operation'=>$operation]);
 }
-public function add_nurse(Request $request){
+public function add_nurse(Request $request,StoreUserRequest $requestUserName){
     $validate=Validator::make($request->all(),[
         'name'=>'required',
         'about_him'=>'required',
@@ -194,7 +217,7 @@ public function add_nurse(Request $request){
             'about_him'=>$request->about_him,
             'birthdate'=>$request->birthdate,
             'phoneNumber'=>$request->phoneNumber,
-            'userName'=>$request->userName,
+            'userName'=>$requestUserName->userName,
             'address'=>$request->address,
             'password'=>$request->password
         ]);
@@ -206,7 +229,7 @@ public function add_nurse(Request $request){
             'about_him'=>$request->about_him,
             'birthdate'=>$request->birthdate,
             'phoneNumber'=>$request->phoneNumber,
-            'userName'=>$request->userName,
+            'userName'=>$requestUserName->userName,
             'address'=>$request->address,
             'password'=>$request->password
         ]);
@@ -218,7 +241,7 @@ public function deleteNurse(Nurse $nurse){
     Nurse::where('id','=',$nurse->id)->first()->delete();
     return Response()->json(['message'=>'nurse deleted successfully']);
 }
-public function add_laboratory(Request $request){
+public function add_laboratory(Request $request,StoreUserRequest $requestUserName){
 
     $validate=Validator::make($request->all(),[
         'name'=>'required',
@@ -240,8 +263,8 @@ public function add_laboratory(Request $request){
             'birthdate'=>$request->birthdate,
             'about_him'=>$request->about_him,
             'phoneNumber'=>$request->phoneNumber,
-            'userName'=>$request->userName,
-            'password'=>$request->password,
+            'userName'=>$requestUserName->userName,
+            'password'=>Hash::make($request->password),
             'address'=>$request->address,
             'email'=>$request->email
         ]);
@@ -253,8 +276,8 @@ public function add_laboratory(Request $request){
             'birthdate'=>$request->birthdate,
             'about_him'=>$request->about_him,
             'phoneNumber'=>$request->phoneNumber,
-            'userName'=>$request->userName,
-            'password'=>$request->password,
+            'password'=>Hash::make($request->password),
+            'userName'=>$requestUserName->userName,
             'address'=>$request->address,
             'email'=>$request->email
         ]);
@@ -265,7 +288,7 @@ public function deleteLaboratory(Laboratory $lab){
     Laboratory::where('id','=',$lab->id)->first()->delete();
     return response()->json(['message'=>'laboratory deleted successfully']);
 }
-public function add_accounter(Request $request){
+public function add_accounter(Request $request,StoreUserRequest $requestUserName){
     $validate=Validator::make($request->all(),[
         'name'=>'required',
         'birthdate'=>'required|date',
@@ -287,8 +310,8 @@ public function add_accounter(Request $request){
             'birthdate'=>$request->birthdate,
             'about_him'=>$request->about_him,
             'phoneNumber'=>$request->phoneNumber,
-            'userName'=>$request->userName,
-            'password'=>$request->password,
+            'password'=>Hash::make($request->password),
+            'userName'=>$requestUserName->userName,
             'email'=>$request->email,
             'address'=>$request->address,
             'operation_sections_id'=>$request->operation_sections_id,
@@ -301,8 +324,8 @@ public function add_accounter(Request $request){
             'birthdate'=>$request->birthdate,
             'about_him'=>$request->about_him,
             'phoneNumber'=>$request->phoneNumber,
-            'userName'=>$request->userName,
-            'password'=>$request->password,
+            'password'=>Hash::make($request->password),
+            'userName'=>$requestUserName->userName,
             'email'=>$request->email,
             'address'=>$request->address,
             'operation_sections_id'=>$request->operation_sections_id,
@@ -340,7 +363,7 @@ public function update_operation_room(Request $request ,Operation_rooms $Oproom)
     Operation_rooms::where('id','=',$Oproom->id)->first()->update($request->all());
     return response()->json(['message'=>'operation room updated successfully']);
 }
-public function add_reseption_employee(Request $request){
+public function add_reseption_employee(Request $request,StoreUserRequest $requestUserName){
     $validate=Validator::make($request->all(),[
         'name'=>'required',
         'birthdate'=>'required',
@@ -361,7 +384,7 @@ public function add_reseption_employee(Request $request){
             'image'=>$this->uploadeImage($request),
             'birthdate'=>$request->birthdate,
             'phoneNumber'=>$request->phoneNumber,
-            'userName'=>$request->userName,
+            'userName'=>$requestUserName->userName,
             'password'=> Hash::make($request->password) ,
             'email'=>$request->email,
             'section_name'=>$request->section_name,
@@ -375,7 +398,7 @@ public function add_reseption_employee(Request $request){
             'name'=>$request->name,
             'birthdate'=>$request->birthdate,
             'phoneNumber'=>$request->phoneNumber,
-            'userName'=>$request->userName,
+            'userName'=>$requestUserName->userName,
             'password'=>Hash::make($request->password) ,
             'email'=>$request->email,
             'section_name'=>$request->section_name,
@@ -482,7 +505,7 @@ public function update_laboratory_section(Request $request ,Laboratory_section $
     $update=Laboratory_section::where('id','=',$request->id)->first();
     return response()->json(['message'=>'laboratory section updated successfully','update'=>$update]);
 }
-public function add_consumer_employee(Request $request){
+public function add_consumer_employee(Request $request,StoreUserRequest $requestUserName){
     $validate=Validator::make($request->all(),[
         'name'=>'required',
         'birthdate'=>'required',
@@ -503,8 +526,8 @@ public function add_consumer_employee(Request $request){
             'image'=>$this->uploadeImage($request),
             'birthdate'=>$request->birthdate,
             'phoneNumber'=>$request->phoneNumber,
-            'userName'=>$request->userName,
-            'password'=>$request->password,
+            'userName'=>$requestUserName->userName,
+            'password'=>Hash::make($request->password),
             'email'=>$request->email,
             'operation_sections_id'=>$request->operation_sections_id,
             'about_him'=>$request->about_him,
@@ -517,8 +540,8 @@ public function add_consumer_employee(Request $request){
             'name'=>$request->name,
             'birthdate'=>$request->birthdate,
             'phoneNumber'=>$request->phoneNumber,
-            'userName'=>$request->userName,
-            'password'=>$request->password,
+            'password'=>Hash::make($request->password),
+            'userName'=>$requestUserName->userName,
             'email'=>$request->email,
             'operation_sections_id'=>$request->operation_sections_id,
             'address'=>$request->address,

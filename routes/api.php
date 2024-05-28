@@ -55,7 +55,6 @@ Route::post('add_nurse_section',[HospitalManager::class,'add_nurse_section']);//
 Route::post('update_nurse_section/{nurseSection}',[HospitalManager::class,'update_nurse_section']);//
 });
 
-Route::post('login_reseption_employee',[Reseption_employee::class,'login']);
 Route::middleware('Employee_reseption')->group(function () {
 Route::post('update_employee/{employee}',[Reseption_employee::class,'update_employee_reseption']);
 Route::post('Register_patients_visit',[Reseption_employee::class,'Register_patients_visit']);
