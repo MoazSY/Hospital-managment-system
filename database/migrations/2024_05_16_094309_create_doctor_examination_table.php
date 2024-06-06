@@ -21,7 +21,7 @@ return new class extends Migration
             $table->date('Symptoms_appear');
             $table->string('Medications_taken')->nullable();//array
             $table->integer('id_medical_examination')->nullable();//array
-            $table->integer('laboratory_analysis')->nullable();
+            $table->integer('laboratory_analysis')->nullable();//array
             $table->boolean('ask_radiation_image')->nullable();
             $table->string('placeRadiation')->nullable();
             $table->boolean('ask_magnetic_image')->nullable();

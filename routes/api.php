@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
+Route::middleware('cors')->group(function(){
 
 Route::post('register_Hospital_manager',[HospitalManager::class,'Register']);
 Route::post('login1',[HospitalManager::class,'login']);
@@ -56,10 +57,10 @@ Route::post('update_nurse_section/{nurseSection}',[HospitalManager::class,'updat
 });
 
 Route::middleware('Employee_reseption')->group(function () {
-Route::post('update_employee/{employee}',[Reseption_employee::class,'update_employee_reseption']);
+Route::post('update_employee',[Reseption_employee::class,'update_employee_reseption']);
 Route::post('Register_patients_visit',[Reseption_employee::class,'Register_patients_visit']);
 Route::post('search_file',[Reseption_employee::class,'search_file']);
-Route::post('show_patient_file/{patient}',[Reseption_employee::class,'show_patient_file']);
+Route::get('show_patient_file/{patient}',[Reseption_employee::class,'show_patient_file']);
 Route::post('add_patient_visit/{patient}',[Reseption_employee::class,'add_patient_visit']);
 Route::get('getDoctor',[Reseption_employee::class,'getDoctor']);
 Route::get('get_section_id',[Reseption_employee::class,'get_section_id']);
@@ -70,6 +71,7 @@ Route::get('show_available_rooms/{section}',[Reseption_employee::class,'show_ava
 Route::post('input_patient_Room/{patient}/{room}',[Reseption_employee::class,'input_patient_Room']);
 Route::get('getLaboratory',[Reseption_employee::class,'getLaboratory']);
 
+});
 });
 
 

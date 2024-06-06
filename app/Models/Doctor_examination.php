@@ -47,5 +47,6 @@ class Doctor_examination extends Model
         'Medications_taken'=>'array',
         'id_medical_examination'=>'array',
         'drugs_id'=>'array',
+        'laboratory_analysis'=>'array'
     ];
 }

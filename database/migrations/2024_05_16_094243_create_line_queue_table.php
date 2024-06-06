@@ -18,6 +18,7 @@ return new class extends Migration
             $table->integer('position')->nullable();
             $table->string('section_name');
             $table->integer('section_id');
+            $table->integer('visit_id')->nullable();
             $table->timestamps();
         });
     }

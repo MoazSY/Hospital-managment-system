@@ -14,7 +14,8 @@ class Doctor_operation_section extends Model
 'operation_sections_id',
 'startWorkTime',
 'endWorkTime',
-'days'
+'days',
+'available'
  ];
 
  public function doctor()

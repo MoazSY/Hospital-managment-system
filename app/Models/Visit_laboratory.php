@@ -27,7 +27,7 @@ class Visit_laboratory extends Model
     }
     public function laboratory()
     {
-        return $this->belongsTo(Doctor::class, 'laboratorys_id');
+        return $this->belongsTo(Laboratory::class, 'laboratorys_id');
     }
 
 }

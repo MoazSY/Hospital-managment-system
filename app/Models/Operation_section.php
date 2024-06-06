@@ -13,7 +13,8 @@ class Operation_section extends Model
         'Section_name',
         'doctors_id',
         'info_section',
-        'contact_info'
+        'contact_info',
+        'available'
     ];
 
     public function doctor()

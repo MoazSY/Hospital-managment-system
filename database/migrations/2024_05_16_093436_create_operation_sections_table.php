@@ -17,6 +17,7 @@ return new class extends Migration
             $table->foreignId('doctors_id')->references('id')->on('doctors')->onDelete('cascade');
             $table->longText('info_section');
             $table->string('contact_info');
+            $table->boolean('available')->nullable();
             $table->timestamps();
         });
     }

@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
-
+use App\Http\Requests\StoreUserRequest;
 use App\Models\Doctor;
 use App\Models\Laboratory;
 use App\Models\Laboratory_section;
@@ -21,13 +21,28 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Nette\Utils\Random;
-
 class Reseption_employee extends Controller
 {
-public function update_employee_reseption(Request $request,ModelsReseption_employee $employee){
-    ModelsReseption_employee::where('id','=',$employee->id)->first()->update($request->all());
+public function update_employee_reseption(Request $request,StoreUserRequest $requestuser){
+    $employee=Auth::guard('reseption_employee')->user();
+    ModelsReseption_employee::where('id','=',$employee->id)->first()->update($request->only
+    ('name',
+    'image',
+    'phoneNumber',
+    'birthdate',
+    'address',
+    'password',
+    'section_name',
+    'email'));
+    if($request['userName']){
+        ModelsReseption_employee::where('id','=',$employee->id)->first()->update($requestuser->only('userName'));
+    }
     $update=ModelsReseption_employee::where('id','=',$employee->id)->first();
     return response()->json(['message'=>'reseption employee update successfuly','update'=>$update]);
+}
+public function profile(){
+    $reseption=Auth::guard('reseption_employee')->user();
+    return response()->json(['message'=>'reseption employee profile','profile'=>$reseption]);
 }
 public function Register_patients_visit(Request $request){
     $validate=Validator::make($request->all(),[
@@ -99,7 +114,8 @@ if(Line_queue::all()->isEmpty()){
         'num_char'=>$this->generateRandomString(),
         'position'=>1,
         'section_id'=>$request->section_id,
-        'section_name'=>Auth::guard('reseption_employee')->user()->section_name
+        'section_name'=>Auth::guard('reseption_employee')->user()->section_name,
+        'visit_id'=>$visit->id
     ]);
 }else
     {
@@ -108,7 +124,9 @@ if(Line_queue::all()->isEmpty()){
         'num_char'=>$this->generateRandomString(),
         'position'=>Line_queue::max('position')+1,
         'section_id'=>$request->section_id,
-        'section_name'=>Auth::guard('reseption_employee')->user()->section_name
+        'section_name'=>Auth::guard('reseption_employee')->user()->section_name,
+        'visit_id'=>$visit->id
+
     ]);}
 return response()->json(['message'=>'patient file added successfully','patient'=>$patient,'visit'=>$visit,'queue'=>$line_queue]);
 }
@@ -131,9 +149,31 @@ return response()->json(['message'=>'patient files','files'=>$result]);
 public function show_patient_file(Patient $patient){
 $patient=Patient::where('id','=',$patient->id)->first();
 //other thing show
-return response()->json(['message'=>'patient file','file'=>$patient]);
 
+if($patient->details_visit()->exists()){
+    $patientVisit=$patient->details_visit;
+}else{$patientVisit=null;}
+if($patient->doctor_examination()->exists()){
+    $patientExamination=$patient->doctor_examination;
+}else{$patientExamination=null;}
+if($patient->imaging_report()->exists()){
+    $patient_imaging=$patient->imaging_report;
+}else{$patient_imaging=null;}
+if($patient->result_laboratory()->exists()){
+    $patient_laboratorys=$patient->result_laboratory;
+}else{$patient_laboratorys=null;}
+if($patient->medical_operation()->exists()){
+    $patient_operation=$patient->medical_operation;
+}else{$patient_operation=null;}
+if($patient->laboratory_visit()->exists()){
+    $patient_laboratory_visit=$patient->laboratory_visit;
 
+}else{$patient_laboratory_visit=null;}
+return response()->json(['message'=>'patient file','file'=>$patient,
+'patient visit'=>$patientVisit
+,'patientExamination'=>$patientExamination,
+'patient_imaging'=>$patient_imaging,'patient_laboratorys'=>$patient_laboratorys,
+'patient_operation'=>$patient_operation,'patient_laboratory_visit'=>$patient_laboratory_visit]);
 }
 public function add_patient_visit(Request $request,Patient $patient){
     $validate=Validator::make($request->all(),[
@@ -269,7 +309,8 @@ public function insert_to_queue(Request $request,Patient $patient){
         'num_char'=>$this->generateRandomString(),
         'position'=>$request->position,
         'section_id'=>$request->section_id,
-        'section_name'=>Auth::guard('reseption_employee')->user()->section_name
+        'section_name'=>Auth::guard('reseption_employee')->user()->section_name,
+        'visit_id'=>$request->visit_id
     ]);
     return response()->json(['message'=>'patient added to queue successfully']);
 }
@@ -308,14 +349,11 @@ public function getLaboratory(){
 }
     public function generateRandomString() {
     $letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-
     // Generate a random letter
     $randomLetter = $letters[rand(0, strlen($letters) - 1)];
-
     // Generate a random number between 0 and 999 and pad with leading zeros if necessary
     $randomNumber = rand(0, 999);
     $randomNumberPadded = str_pad($randomNumber, 3, '0', STR_PAD_LEFT);
-
     // Combine and return the letter and numbers
     return $randomLetter . $randomNumberPadded;
 }

@@ -14,7 +14,8 @@ class Radiation_section extends Model
         'address',
         'contact_info',
         'info_about',
-        'name'
+        'name',
+        'available'
     ];
 
     public function doctor()

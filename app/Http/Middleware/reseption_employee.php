@@ -8,7 +8,6 @@ use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
-
 class reseption_employee
 {
     /**
@@ -26,10 +25,8 @@ class reseption_employee
         $user = Auth::guard('reseption_employee')->user();
       if(ModelsReseption_employee::where('id','=',$user->id)){
         return $next($request);
-
       }
       return response()->json(['error' => 'Unauthorized'], 401);
-
     }
 }
 

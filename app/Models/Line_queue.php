@@ -14,7 +14,8 @@ class Line_queue extends Model
         'num_char',
         'position',
         'section_name',
-        'section_id'
+        'section_id',
+        'visit_id'
     ];
 
     public function patient()

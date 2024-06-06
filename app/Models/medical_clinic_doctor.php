@@ -15,7 +15,8 @@ class medical_clinic_doctor extends Model
         'price',
         'start_time',
         'end_time',
-        'days'
+        'days',
+        'doctor_available'
 
     ];
     protected $casts=[

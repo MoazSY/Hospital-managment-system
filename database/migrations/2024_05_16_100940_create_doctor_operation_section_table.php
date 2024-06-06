@@ -18,6 +18,7 @@ return new class extends Migration
             $table->time('startWorkTime');
             $table->time('endWorkTime');
             $table->string('days');//array
+            $table->boolean('available')->nullable();
             $table->timestamps();
         });
     }

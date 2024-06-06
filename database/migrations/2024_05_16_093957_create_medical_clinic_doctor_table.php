@@ -19,6 +19,7 @@ return new class extends Migration
             $table->time('start_time');
             $table->time('end_time');
             $table->string('days');//array
+            $table->boolean('doctor_available')->nullable();
             $table->timestamps();
         });
     }

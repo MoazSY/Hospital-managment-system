@@ -2,12 +2,12 @@
 
 namespace App\Http\Middleware;
 
-use App\Models\Hospital_manager as Hospital;
+use App\Models\Doctor as ModelsDoctor;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Illuminate\Support\Facades\Auth;
-class hospital_manager
+class Doctor
 {
     /**
      * Handle an incoming request.
@@ -17,15 +17,14 @@ class hospital_manager
     public function handle(Request $request, Closure $next): Response
     {
         $token=$request->bearerToken();
-        if ( !$token||!Auth::guard('hospital_manager')->check()) {
-            return response()->json(['error' => 'Unauthorized1'], 401);
+        if(!$token || !Auth::guard('doctor')->check()){
+            return Response()->json(['error'=>'Unauthorized1'],401);
         }
-
-        $user = Auth::guard('hospital_manager')->user();
-      if(Hospital::where('id','=',$user->id)){
+        $user=Auth::guard('doctor')->user();
+        if(ModelsDoctor::where('id','=',$user->id)){
         return $next($request);
-      }
-      return response()->json(['error' => 'Unauthorized'], 401);
+        }
+        return response()->json(['error' => 'Unauthorized'], 401);
 
     }
 }

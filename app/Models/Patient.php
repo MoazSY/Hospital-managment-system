@@ -73,5 +73,9 @@ public function room_stay()
 {
     return $this->hasMany(Stay_operation_rooms::class);
 }
+public function laboratory_visit()
+{
+    return $this->hasOne(Visit_laboratory::class);
+}
 }
 

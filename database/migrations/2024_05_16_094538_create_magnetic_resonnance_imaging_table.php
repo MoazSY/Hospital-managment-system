@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('contact_info');
             $table->text('info_about');
+            $table->boolean('available')->nullable();
             $table->timestamps();
         });
     }

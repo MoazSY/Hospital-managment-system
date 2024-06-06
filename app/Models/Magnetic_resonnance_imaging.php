@@ -13,7 +13,8 @@ class Magnetic_resonnance_imaging extends Model
         'address',
         'contact_info',
         'info_about',
-        'name'
+        'name',
+        'available'
     ];
 
     public function doctor()
