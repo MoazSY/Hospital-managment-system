@@ -16,7 +16,8 @@ class Medical_clinic extends Model
         'days',
         'address',
         'contact_info',
-        'info_clinic'
+        'info_clinic',
+        
     ];
     protected $casts=[
         'days'=>'array'

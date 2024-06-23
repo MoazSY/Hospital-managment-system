@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('section_name');
             $table->integer('section_id');
             $table->integer('visit_id')->nullable();
+            $table->boolean('wating')->nullable();
             $table->timestamps();
         });
     }

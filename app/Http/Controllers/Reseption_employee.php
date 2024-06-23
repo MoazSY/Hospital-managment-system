@@ -19,6 +19,7 @@ use App\Models\Visit_laboratory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Nette\Utils\Random;
 class Reseption_employee extends Controller
@@ -27,7 +28,6 @@ public function update_employee_reseption(Request $request,StoreUserRequest $req
     $employee=Auth::guard('reseption_employee')->user();
     ModelsReseption_employee::where('id','=',$employee->id)->first()->update($request->only
     ('name',
-    'image',
     'phoneNumber',
     'birthdate',
     'address',
@@ -36,6 +36,10 @@ public function update_employee_reseption(Request $request,StoreUserRequest $req
     'email'));
     if($request['userName']){
         ModelsReseption_employee::where('id','=',$employee->id)->first()->update($requestuser->only('userName'));
+    }
+    if($request->hasFile('image')){
+   $imageUpdate=ModelsReseption_employee::where('id','=',$employee->id)->first();
+        $imageUpdate->image=$this->uploadeImage($request);
     }
     $update=ModelsReseption_employee::where('id','=',$employee->id)->first();
     return response()->json(['message'=>'reseption employee update successfuly','update'=>$update]);
@@ -108,7 +112,7 @@ if(Auth::guard('reseption_employee')->user()->section_name=='Laboratory section'
     'section_id'=>$request->section_id
 ]);}
 
-if(Line_queue::all()->isEmpty()){
+if(Line_queue::where('section_name','=',Auth::guard('reseption_employee')->user()->section_name)->get()->isEmpty()){
     $line_queue=Line_queue::create([
         'patient_id'=>$patient->id,
         'num_char'=>$this->generateRandomString(),
@@ -147,35 +151,24 @@ if($result->isEmpty()){
 return response()->json(['message'=>'patient files','files'=>$result]);
 }
 public function show_patient_file(Patient $patient){
-$patient=Patient::where('id','=',$patient->id)->first();
-//other thing show
-
-if($patient->details_visit()->exists()){
-    $patientVisit=$patient->details_visit;
-}else{$patientVisit=null;}
-if($patient->doctor_examination()->exists()){
-    $patientExamination=$patient->doctor_examination;
-}else{$patientExamination=null;}
-if($patient->imaging_report()->exists()){
-    $patient_imaging=$patient->imaging_report;
-}else{$patient_imaging=null;}
-if($patient->result_laboratory()->exists()){
-    $patient_laboratorys=$patient->result_laboratory;
-}else{$patient_laboratorys=null;}
-if($patient->medical_operation()->exists()){
-    $patient_operation=$patient->medical_operation;
-}else{$patient_operation=null;}
-if($patient->laboratory_visit()->exists()){
-    $patient_laboratory_visit=$patient->laboratory_visit;
-
-}else{$patient_laboratory_visit=null;}
-return response()->json(['message'=>'patient file','file'=>$patient,
-'patient visit'=>$patientVisit
-,'patientExamination'=>$patientExamination,
-'patient_imaging'=>$patient_imaging,'patient_laboratorys'=>$patient_laboratorys,
-'patient_operation'=>$patient_operation,'patient_laboratory_visit'=>$patient_laboratory_visit]);
+    $patientfile=Patient::with([
+        'details_visit',
+        'doctor_examination',
+        'imaging_report',
+        'radiology_report',
+        'result_laboratory',
+        'medical_operation',
+    ])->find($patient->id);
+    return response()->json([
+        'patient'=>$patientfile,
+        'doctor_examination'=>$patientfile->doctor_examination,
+        'imaging_report'=>$patientfile->imaging_report,
+        'radiology_report'=>$patientfile->radiology_report,
+        'result_laboratory'=>$patientfile->result_laboratory,
+        'medical_operation'=>$patientfile->medical_operation
+    ]);
 }
-public function add_patient_visit(Request $request,Patient $patient){
+ public function add_patient_visit(Request $request,Patient $patient){
     $validate=Validator::make($request->all(),[
         'enterDate'=>'required|date',
         'typeVisit'=>'required',
@@ -205,7 +198,8 @@ public function add_patient_visit(Request $request,Patient $patient){
         'num_char'=>$this->generateRandomString(),
         'position'=>Line_queue::max('position')+1,
         'section_id'=>$request->section_id,
-        'section_name'=>Auth::guard('reseption_employee')->user()->section_name
+        'section_name'=>Auth::guard('reseption_employee')->user()->section_name,
+        'visit_id'=>$visit->id
     ]);
 return response()->json(['message'=>'visit added successfully','visit'=>$visit]);
 }
@@ -301,7 +295,32 @@ public function delete_from_queue(Line_queue $lineQ){
    ->decrement('position');
 return response()->json(['message'=>'patient queue deleted successfully']);
 }
-public function insert_to_queue(Request $request,Patient $patient){
+public function get_visit_details(Request $request,Patient $patient){
+    $array=[];
+    $visit=Visit_details::where('patient_id','=',$patient->id)->where('section_name','=',Auth::guard('reseption_employee')->user()->section_name)->get();
+    foreach($visit as $v){
+        $array[]=array(
+            'patient_id'=>$patient->id,
+            'doctors_id'=>$v->doctors_id,
+            'enterDate'=>$v->enterDate,
+            'enterTime'=>$v->enterTime,
+            'endTime'=>$v->endTime,
+            'typeVisit'=>$v->typeVisit,
+            'section_name'=>$v->section_name,
+            'section_id'=>$v->section_id,
+            'id'=>$v->id,
+        );
+    }
+    return response()->json(['message','visit details about patient are'=>$array]);
+}
+public function insert_to_queue(Request $request,Patient $patient,Visit_details $visit){
+    $validate=Validator::make($request->all(),[
+        'position'=>'required',
+        'section_id'=>'required'
+    ]);
+    if($validate->fails()){
+        return response()->json(['message'=>$validate->errors()]);
+    }
     Line_queue::where('section_name','=',Auth::guard('reseption_employee')->user()->section_name)->where('position', '>=', $request->position)
     ->increment('position');
     $line=Line_queue::create([
@@ -310,12 +329,12 @@ public function insert_to_queue(Request $request,Patient $patient){
         'position'=>$request->position,
         'section_id'=>$request->section_id,
         'section_name'=>Auth::guard('reseption_employee')->user()->section_name,
-        'visit_id'=>$request->visit_id
+        'visit_id'=>$visit->id
     ]);
     return response()->json(['message'=>'patient added to queue successfully']);
 }
 public function show_available_rooms(Operation_section $section){
-    $rooms=Operation_rooms::where('available','=',null)->where('operation_sections_id','=',$section->id)->get();
+    $rooms=Operation_rooms::where('available','=',true)->where('operation_sections_id','=',$section->id)->get();
     return Response()->json(['message'=>'all rooms available for patient','rooms'=>$rooms]);
 }
 public function input_patient_Room(Request $request,Patient $patient,Operation_rooms $room){
@@ -332,7 +351,9 @@ if($validate->fails()){
         'enter_time'=>$request->enter_time,
         'enter_date'=>$request->enter_date,
     ]);
-    return response()->json(['message'=>'patient move to room successfully','patient room'=>$patient_room]);
+    $room->available=false;
+    $room->save();
+    return response()->json(['message'=>'patient move to room successfully','patient room'=>$patient_room,'room'=>$room]);
 }
 public function getLaboratory(){
     $laboratory=Laboratory::select('name','id')->get();
@@ -356,5 +377,37 @@ public function getLaboratory(){
     $randomNumberPadded = str_pad($randomNumber, 3, '0', STR_PAD_LEFT);
     // Combine and return the letter and numbers
     return $randomLetter . $randomNumberPadded;
+}
+//routing to section
+public function routing(){
+    $reseption=Auth::guard('reseption_employee')->user();
+    if($reseption->section_name=='Medical clinic'){
+        return response()->json(['message'=>'reception employee login to Medical clinic']);
+    }
+    if($reseption->section_name=='Operations section'){
+        return response()->json(['message'=>'reception employee login to Operations section']);
+    }
+    if($reseption->section_name=='Radiation section'){
+        return response()->json(['message'=>'reception employee login to Radiation section']);
+    }
+    if($reseption->section_name=='Magnitic section'){
+        return response()->json(['message'=>'reception employee login to Magnitic section']);
+    }
+    if($reseption->section_name=='Laboratory section'){
+        return response()->json(['message'=>'reception employee login to Laboratory section']);
+    }
+}
+public function uploadeImage(Request $request)
+{
+    $validator = Validator::make($request->all(), [
+        'image' => 'required|image|mimes:jpg,png,jpeg,gif,svg|max:2048', // Adding a max size for the image
+    ]);
+    if ($validator->fails()) {
+        return response()->json(['error' => $validator->errors()], 422);
+    }
+    $image = $request->file('image');
+    $name = uniqid() . '_' . time() . '.' . $image->getClientOriginalExtension();
+    $path = $image->storeAs('public/images', $name);
+    return  Storage::url($path);
 }
 }

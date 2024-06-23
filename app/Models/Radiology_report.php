@@ -13,7 +13,8 @@ class Radiology_report extends Model
         'doctors_id',
         'price',
         'image',
-        'medical_diagnosis'
+        'medical_diagnosis',
+        'patient_id'
     ];
 
     public function radiation_section()
@@ -25,5 +26,6 @@ class Radiology_report extends Model
     {
         return $this->belongsTo(Doctor::class, 'radiation_section_id');
     }
+    protected $casts=['image'=>'array'];
 }
 

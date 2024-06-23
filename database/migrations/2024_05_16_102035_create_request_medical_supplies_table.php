@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('request_medical_supplies', function (Blueprint $table) {
             $table->id();
             $table->integer('doctor_id');
-            $table->integer('nurse_id');
+            $table->integer('nurse_id')->nullable();
             $table->foreignId('drugs_supplies_id')->references('id')->on('drugs_supplies')->onDelete('cascade');
             $table->integer('quentity');
             $table->foreignId('operation_sections_id')->references('id')->on('operation_sections')->onDelete('cascade');

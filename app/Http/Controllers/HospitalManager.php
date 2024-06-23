@@ -18,6 +18,8 @@ use App\Models\Nurse_section;
 use App\Models\Radiation_section;
 use App\Models\Reseption_employee;
 use App\Models\User;
+use App\Models\Warehouse_manager;
+use App\Models\Pharmatical_warehouse;
 use Illuminate\Support\Facades\Schema;
 use Dotenv\Validator as DotenvValidator;
 use GuzzleHttp\Psr7\Response;
@@ -114,6 +116,10 @@ if($validate->fails()){
         'token' => $token,
         'user_type' => $userType
     ]);
+  }
+  public function profile(){
+    $manager=Auth::guard('hospital_manager')->user();
+    return response()->json(['message'=>'hospital manager profile','profile'=>$manager]);
   }
   public function add_doctor(Request $request,StoreUserRequest $requestUserName){
 
@@ -353,7 +359,8 @@ public function add_operation_rooms(Request $request){
     $rooms=Operation_rooms::create([
         'operation_sections_id'=>$request->operation_sections_id,
         'numberRoom'=>$request->numberRoom,
-        'hour_price_stay'=>$request->hour_price_stay
+        'hour_price_stay'=>$request->hour_price_stay,
+        'available'=>true
     ]);
     return Response()->json(['message'=>'operation room added successfully','operation room'=>$rooms]);
 }
@@ -718,7 +725,73 @@ public function update_nurse_section(Request $request,Nurse_section $nurseSectio
     $update=Nurse_section::where('id','=',$nurseSection->id)->first();
     return response()->json(['message'=>'doctor operation section updated successfully','update'=>$update]);
 }
+public function add_warehouse_manager(Request $request ,StoreUserRequest $requestUserName){
+$validate=Validator::make($request->all(),[
+    'name'=>'required',
+    // 'image',
+    'birthdate'=>'required|date',
+    'about_him'=>'required',
+    'phoneNumber'=>'required',
+    'userName'=>'required|unique:warehouse_manager',
+    'password'=>'required|min:8|alpha_num',
+    'email'=>'required|email|unique:warehouse_manager'
+]);
+if($validate->fails()){
+    return response()->json(['message'=>$validate->errors()]);
+}
+if($request->hasFile('image')){
+    $warehouseManager=Warehouse_manager::create([
+        'name'=>$request->name,
+        'birthdate'=>$request->birthdate,
+        'about_him'=>$request->about_him,
+        'phoneNumber'=>$request->phoneNumber,
+        'userName'=>$requestUserName->userName,
+        'password'=>$request->password,
+        'email'=>$request->email,
+        'image'=>$this->uploadeImage($request)
+    ]);
+    return response()->json(['message'=>'warehouse added successfully','warehouse'=>$warehouseManager]);
+}else{
+       $warehouseManager=Warehouse_manager::create([
+        'name'=>$request->name,
+        'birthdate'=>$request->birthdate,
+        'about_him'=>$request->about_him,
+        'phoneNumber'=>$request->phoneNumber,
+        'userName'=>$requestUserName->userName,
+        'password'=>$request->password,
+        'email'=>$request->email,
+    ]);
+    return response()->json(['message'=>'warehouse added successfully','warehouse'=>$warehouseManager]);
+}
+}
+public function add_pharmatical_warehouse(Request $request){
+    $validate=Validator::make($request->all(),[
+        'warehouse_manager_id'=>'required',
+        'address'=>'required',
+        'contact_info'=>'required',
+        'details_info'=>'required'
+    ]);
+    if($validate->fails()){
+        return response()->json(['message'=>$validate->errors()]);
+    }
+    $pharmatical=Pharmatical_warehouse::create([
+        'warehouse_manager_id'=>$request->warehouse_manager_id,
+        'address'=>$request->address,
+        'contact_info'=>$request->contact_info,
+        'details_info'=>$request->details_info
+    ]);
+    return response()->json(['message'=>'pharmatical warehouse added successfully','pharmatical warehouse'=>$pharmatical]);
+}
+public function update_pharmatical_warehouse(Request $request,Pharmatical_warehouse $pharmatical){
+ $update=Pharmatical_warehouse::where('id','=',$pharmatical->id)->first()->update($request->all());
+ $Pharmatical_warehouse=Pharmatical_warehouse::where('id','=',$pharmatical->id)->first();
+ return response()->json(['message'=>'pharmatical warehouse updated successfully','pharmatical warehouse'=>$Pharmatical_warehouse]);
+}
+public function delete_pharmatical_warehouse(Pharmatical_warehouse $pharmatical){
+ $delete=Pharmatical_warehouse::where('id','=',$pharmatical->id)->first()->delete();
+ return response()->json(['message'=>'pharmatical warehouse deleted successfully']);
 
+}
 public function uploadeImage(Request $request)
 {
     $validator = Validator::make($request->all(), [

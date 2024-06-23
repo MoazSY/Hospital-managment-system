@@ -20,15 +20,15 @@ return new class extends Migration
             $table->text('Current_symptoms');//array
             $table->date('Symptoms_appear');
             $table->string('Medications_taken')->nullable();//array
-            $table->integer('id_medical_examination')->nullable();//array
-            $table->integer('laboratory_analysis')->nullable();//array
+            $table->json('id_medical_examination')->nullable();//array
+            $table->json('laboratory_analysis')->nullable();//array
             $table->boolean('ask_radiation_image')->nullable();
             $table->string('placeRadiation')->nullable();
             $table->boolean('ask_magnetic_image')->nullable();
             $table->string('place_magnetic')->nullable();
             $table->boolean('ask_operationAction')->nullable();
             $table->string('NameActionOperation')->nullable();
-            $table->integer('drugs_id')->nullable();//array
+            $table->json('drugs_id')->nullable();//array
             $table->text('result_examination');
             $table->text('medical_recomendation')->nullable();
             $table->timestamps();

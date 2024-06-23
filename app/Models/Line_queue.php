@@ -15,9 +15,9 @@ class Line_queue extends Model
         'position',
         'section_name',
         'section_id',
-        'visit_id'
+        'visit_id',
+        'wating'
     ];
-
     public function patient()
     {
         return $this->belongsTo(Patient::class, 'patient_id');

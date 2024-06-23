@@ -29,4 +29,7 @@ class Visit_details extends Model
     {
         return $this->belongsTo(Doctor::class, 'doctors_id');
     }
+    protected $casts = [
+        'enterTime' => 'datetime:H:i', // Adjust format as needed
+    ];
 }

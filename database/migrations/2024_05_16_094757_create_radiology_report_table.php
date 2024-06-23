@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('name_radiology');
             $table->foreignId('radiation_section_id')->references('id')->on('radiation_section')->onDelete('cascade');
             $table->foreignId('doctors_id')->references('id')->on('doctors')->onDelete('cascade');
+            $table->foreignId('patient_id')->references('id')->on('patient')->onDelete('cascade');
             $table->float('price');
             $table->string('image');
             $table->text('medical_diagnosis');

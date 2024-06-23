@@ -16,9 +16,18 @@ use App\Models\Medical_examination;
 use App\Models\Operation_section;
 use App\Models\Operations;
 use App\Models\Patient;
+use App\Models\Imaging_report;
 use App\Models\Radiation_section;
 use App\Models\Sugar_blood;
 use App\Models\Visit_details;
+use App\Models\Radiology_report;
+use App\Models\Medical_operation;
+use App\Models\Drugs_supplies;
+use App\Models\Request_medical_supplies;
+use App\Models\Patient_graduation;
+use App\Models\Operation_rooms;
+use App\Models\Stay_operation_rooms;
+use App\Models\Pharmatical_warehouse;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -31,7 +40,6 @@ class Doctor extends Controller
         $doctor=Auth::guard('doctor')->user();
         ModelsDoctor::where('id','=',$doctor->id)->update($request->only(
             'name',
-            'image',
             'birthdate',
             'about_him',
             'password',
@@ -44,147 +52,397 @@ class Doctor extends Controller
         if($request['userName']){
             ModelsDoctor::where('id','=',$doctor->id)->first()->update($requestuser->only('userName'));
         }
+        if($request['image']){
+          $doctorImage=ModelsDoctor::where('id','=',$doctor->id)->first();
+            $doctorImage->image=$this->uploadeImageDoctor($request);
+            $doctorImage->save();
+        }
         $doctorinfo=ModelsDoctor::where('id','=',$doctor->id)->first();
         return response()->json(['message'=>'doctor updated successfully','doctor'=>$doctorinfo]);
     }
     public function update_clinic(Request $request,medical_clinic_doctor $clinic){
         $doctor=Auth::guard('doctor')->user();
-       $update_clinic= medical_clinic_doctor::where('doctors_id','=',$doctor->id)->where('id','=',$clinic->id)->first()->update($request->only('price','start_time','end_time', 'days'));
+       $update_clinic= medical_clinic_doctor::where('doctors_id','=',$doctor->id)->where('id','=',$clinic->id)->first();
+      $update_clinic ->update($request->only('price','start_time','end_time', 'days'));
        return response()->json(['message'=>'medical clinic updated successfully','clinic'=>$update_clinic]);
     }
     public function update_operation_section(Request $request,Doctor_operation_section $section){
         $doctor=Auth::guard('doctor')->user();
-        $update_operation_section=Doctor_operation_section::where('doctors_id','=',$doctor->id)->where('id','=',$section->id)->first()->update($request->only('startWorkTime','endWorkTime','days'));
+        $update_operation_section=Doctor_operation_section::where('doctors_id','=',$doctor->id)->where('id','=',$section->id)->first();
+        $update_operation_section->update($request->only('startWorkTime','endWorkTime','days'));
         return response()->json(['message'=>'operation section updated successfully','operation section'=>$update_operation_section]);
     }
     public function profile(){
-        $doctor=Auth::guard('doctor')->user();
-        return response()->json(['message'=>'doctor profile','profile'=>$doctor,'operation'=>$doctor->operation,'medical_clinic'=>$doctor->medical_clinic_doctor,'operation_section'=>$doctor->operation_section,'doctor_operation_section'=>$doctor->doctor_operation_section]);
-    }//return array of section name related to doctor called after login
-    public function routing_section(Request $request){
-        $operation=array();
-        $medical=array();
-        $operation_management=array();
-        $radiation_section=array();
-        $imaging_section=array();
-        $doctor=Auth::guard('doctor')->user();
-        $doctor=ModelsDoctor::where('id','=',$doctor->id)->first();
+        $doctorID=Auth::guard('doctor')->user()->id;
+        $doctor=ModelsDoctor::where('id','=',$doctorID)->first();
+
+        $doctor = ModelsDoctor::with([
+            'medical_clinic_doctor',
+            'operation',
+            'operation_section',
+            'doctor_operation_section'
+        ])->find($doctorID);
+
+        if (!$doctor) {
+            return response()->json(['message' => 'Doctor not found'], 404);
+        }
+        return response()->json([
+            'message' => 'Doctor profile retrieved successfully',
+            'profile' => $doctor,
+            'medical_clinic' => $doctor->medical_clinic_doctor,
+            'operation' => $doctor->operation,
+            'operation_section' => $doctor->operation_section,
+            'doctor_operation_section' => $doctor->doctor_operation_section
+        ]);
+    }
+    public function routing_section(){
+    // Initialize arrays to hold the sections
+    $operationSections = [];
+    $medicalClinics = [];
+    $operationManagementSections = [];
+    $radiationSections = [];
+    $imagingSections = [];
+    // Get the authenticated doctor
+    $doctorID = Auth::guard('doctor')->user()->id;
+    // Eager load relationships
+    $doctor = ModelsDoctor::with([
+        'doctor_operation_section',
+        'medical_clinic_doctor',
+        'operation_section',
+        'radiology_section',
+        'imaging_section'
+    ])->find($doctorID);
+
+    // Check if the doctor was found
+    if (!$doctor) {
+        return response()->json(['message' => 'Doctor not found'], 404);
+    }
         if($doctor->doctor_operation_section()->exists()){
-          foreach($doctor->doctor_operation_section as $section){
-            $sectionName=Operation_section::where('id','=',$section->operation_sections_id)->first();
-            array_push($operation,[$sectionName->Section_name,'Operation Section']);
-          }
+        foreach($doctor->doctor_operation_section as $section){
+        $sectionName=Operation_section::where('id','=',$section->operation_sections_id)->first();
+        $operationSections[]=[$sectionName->Section_name,'Operation Section'];
+        }
         }
         if($doctor->medical_clinic_doctor()->exists()){
             foreach($doctor->medical_clinic_doctor as $medical){
-            $medicalName=Medical_clinic::where('id','=',$medical->id)->first();
-                array_push($medical,[$medicalName->name,'Medical clinic']);
+            $medicalName=Medical_clinic::where('id','=',$medical->medical_clinic_id)->first();
+                $medicalClinics[]=[$medicalName->name,'Medical clinic'];
             }
         }
         if($doctor->operation_section()->exists()){
-            foreach($doctor->operation_section as $section){
-                array_push($operation_management,[$section->Section_name,'Operation Managment']);
-            }
+    foreach($doctor->operation_section as $section){
+       $operationManagementSections[]=[$section->Section_name,'Operation Managment'];
+    }
+}
+    if($doctor->radiology_section()->exists()){
+        foreach($doctor->radiology_section as $section){
+            $radiationSections[]=[$section->name,'Radiology Section'];
         }
-        if($doctor->radiology_section()->exists()){
-            foreach($doctor->radiology_section as $section){
-                array_push($radiation_section,[$section->name,'Radiology Section']);
-            }
-        }
-        if($doctor->imaging_section()->exists()){
-            foreach($doctor->imaging_section as $section){
-                array_push($imaging_section,[$section->name,'Imaging Section']);
-            }
-        }
-        return response()->json(['message'=>'choose any section you want to move it','operation section'=>$operation,
-        'medical clinic'=> $medical,'managment operation section'=>$operation_management, 'radiation section'=>$radiation_section,'imaging section'=>$imaging_section]);
+    }
+    if($doctor->imaging_section()->exists()){
+    foreach($doctor->imaging_section as $section){
+        $imagingSections[]=[$section->name,'Imaging Section'];
+    }
+}
+ return response()->json([
+        'message' => 'Choose any section you want to move to',
+        'operation_section' => $operationSections,
+        'medical_clinic' => $medicalClinics,
+        'operation_management_section' => $operationManagementSections,
+        'radiation_section' => $radiationSections,
+        'imaging_section' => $imagingSections
+    ]);
     }
     //get section and sectionName from array above
     public function choose_section(Request $request){
         $section=$request->section;
         $sectionName=$request->section_name;
-        if($section=='Operation Section'){
+           if($section=='Operation Section'){
             $operationSection=Operation_section::where('Section_name','=',$sectionName)->first();
-            $operatioSectionDoctor=Doctor_operation_section::where('id','=',$operationSection->id)->first();
+            $operatioSectionDoctor=Doctor_operation_section::where('operation_sections_id','=',$operationSection->id)->first();
             $operatioSectionDoctor->available=true;
-            return response()->json(['message'=>'doctor available in operation section','operation section'=>$sectionName]);
+            $operatioSectionDoctor->save();
+            return response()->json(['message'=>'doctor available in operation section','operation section'=>$operatioSectionDoctor,'section name'=>$sectionName]);
         }
         if($section=='Medical clinic'){
             $medical_clinic=Medical_clinic::where('name','=',$sectionName)->first();
-            $medicalClinic_doctor=medical_clinic_doctor::where('id','=',$medical_clinic->id)->first();
+            $medicalClinic_doctor=medical_clinic_doctor::where('medical_clinic_id','=',$medical_clinic->id)->first();
             $medicalClinic_doctor->doctor_available=true;
-            return response()->json(['message'=>'doctor available in medical clinic','medical clinic'=>$sectionName]);
+            $medicalClinic_doctor->save();
+            return response()->json(['message'=>'doctor available in medical clinic','medical clinic'=>$medicalClinic_doctor,'section name'=>$sectionName]);
         }
         if($section=='Operation Managment'){
             $operation=Operation_section::where('Section_name','=',$sectionName)->first();
             $operation->available=true;
-            return response()->json(['message'=>'doctor available in operation section managment','operation section'=>$sectionName]);
-
+            $operation->save();
+            return response()->json(['message'=>'doctor available in operation section managment','operation section'=>$operation,'section name'=>$sectionName]);
         }
-        if($section='Radiology Section'){
+        if($section=='Radiology Section'){
             $radiation=Radiation_section::where('name','=',$sectionName)->first();
             $radiation->available=true;
-            return response()->json(['message'=>'doctor available in radiology section','dadiology section'=>$sectionName]);
+            $radiation->save();
+            return response()->json(['message'=>'doctor available in radiology section','dadiology section'=>$radiation,'section name'=>$sectionName]);
         }
-            if($section='Imaging Section'){
+            if($section=='Imaging Section'){
             $imaging=Magnetic_resonnance_imaging::where('name','=',$sectionName)->first();
             $imaging->available=true;
-            return response()->json(['message'=>'doctor available in magnitic section','magnitic section'=>$sectionName]);
+            $imaging->save();
+            return response()->json(['message'=>'doctor available in magnitic section','magnitic section'=>$imaging,'section name'=>$sectionName]);
         }
     }
-    //midecal queue
+    public function Pass_Patient(Line_queue $queue){
+        $doctorId=Auth::guard('doctor')->user()->id;
+        $doctor = ModelsDoctor::with([
+            'doctor_operation_section',
+            'medical_clinic_doctor',
+            'operation_section',
+            'radiology_section',
+            'imaging_section'
+        ])->find($doctorId);
+        // Check if the doctor was found
+        if (!$doctor) {
+            return response()->json(['message' => 'Doctor not found'], 404);
+        }
+        if($doctor->medical_clinic_doctor()->exists()){
+            $medical=medical_clinic_doctor::where('doctor_available','=',true)->where('doctors_id','=',$doctor->id)->first();
+            $line_queue=Line_queue::where('section_id','=',$medical->medical_clinic_id)->where('section_name','=','Medical clinic')->where('position','=',$queue->position+1)->first();
+            if($line_queue){
+                $line_queue->delete();
+                $patient=Patient::where('id','=',$line_queue->patient_id)->first();
+                Line_queue::where('section_id','=',$medical->medical_clinic_id)->where('section_name','=','Medical clinic')->where('position','>',$line_queue->position)->decrement('position');
+                $visit_details=Visit_details::where('id','=',$line_queue->visit_id)->first();
+                $visit_details->enterTime=Carbon::now();
+                $visit_details->save();
+                Line_queue::create([
+                    'patient_id'=>$queue->patient_id,
+                    'num_char'=>$queue->num_char,
+                    'position'=>$queue->position,
+                    'section_name'=>$queue->section_name,
+                    'section_id'=>$queue->section_id,
+                    'visit_id'=>$queue->visit_id,
+                    'wating'=>true
+                ]);
+                Line_queue::where('section_id','=',$medical->medical_clinic_id)->where('section_name','=','Medical clinic')->where('position','>',$queue->position)->increment('position');
+                return response()->json(['message'=>'get patient from queue','patient'=>$patient,'queue'=>$line_queue]);
+            }
+            Line_queue::create([
+                'patient_id'=>$queue->patient_id,
+                'num_char'=>$queue->num_char,
+                'position'=>$queue->position,
+                'section_name'=>$queue->section_name,
+                'section_id'=>$queue->section_id,
+                'visit_id'=>$queue->visit_id,
+                'wating'=>true
+            ]);
+            Line_queue::where('section_id','=',$medical->medical_clinic_id)->where('section_name','=','Medical clinic')->where('position','>',$queue->position)->increment('position');
+            return response()->json(['message'=>'dont found other patients']);
+        }
+        if($doctor->operation_section()->exists()){
+            $operation=Operation_section::where('available','=',true)->where('doctors_id','=',$doctor->id)->first();
+            $line_queue=Line_queue::where('section_id','=',$operation->id)->where('section_name','=','Operations section')->where('position','=',$queue->position+1)->first();
+            if($line_queue){
+                $line_queue->delete();
+                $patient=Patient::where('id','=',$line_queue->patient_id)->first();
+                Line_queue::where('section_id','=',$operation->id)->where('section_name','=','Operations section')->where('position','>',$line_queue->position)->decrement('position');
+                $visit_details=Visit_details::where('id','=',$line_queue->visit_id)->first();
+                $visit_details->enterTime=Carbon::now()->format('H:i');
+                Line_queue::create([
+                    'patient_id'=>$queue->patient_id,
+                    'num_char'=>$queue->num_char,
+                    'position'=>$queue->position,
+                    'section_name'=>$queue->section_name,
+                    'section_id'=>$queue->section_id,
+                    'visit_id'=>$queue->visit_id,
+                    'wating'=>true
+                ]);
+                Line_queue::where('section_id','=',$operation->id)->where('section_name','=','Operations section')->where('position','>',$queue->position)->increment('position');
+                return response()->json(['message'=>'get patient from queue','patient'=>$patient,'queue'=>$line_queue]);
+            }
+            Line_queue::create([
+                'patient_id'=>$queue->patient_id,
+                'num_char'=>$queue->num_char,
+                'position'=>$queue->position,
+                'section_name'=>$queue->section_name,
+                'section_id'=>$queue->section_id,
+                'visit_id'=>$queue->visit_id,
+                'wating'=>true
+            ]);
+            Line_queue::where('section_id','=',$operation->id)->where('section_name','=','Operations section')->where('position','>',$queue->position)->increment('position');
+            return response()->json(['message'=>'dont found other patients']);
+        }
+        if($doctor->doctor_operation_section()->exists()){
+            $operation=Doctor_operation_section::where('available','=',true)->where('doctors_id','=',$doctor->id)->first();
+            $line_queue=Line_queue::where('section_id','=',$operation->operation_sections_id)->where('section_name','=','Operations section')->where('position','=',$queue->position+1)->first();
+            if($line_queue){
+                $line_queue->delete();
+                $patient=Patient::where('id','=',$line_queue->patient_id)->first();
+                Line_queue::where('section_id','=',$operation->id)->where('section_name','=','Operations section')->where('position','>',$line_queue->position)->decrement('position');
+                $visit_details=Visit_details::where('id','=',$line_queue->visit_id)->first();
+                $visit_details->enterTime=Carbon::now()->format('H:i');
+                Line_queue::create([
+                    'patient_id'=>$queue->patient_id,
+                    'num_char'=>$queue->num_char,
+                    'position'=>$queue->position,
+                    'section_name'=>$queue->section_name,
+                    'section_id'=>$queue->section_id,
+                    'visit_id'=>$queue->visit_id,
+                    'wating'=>true
+                ]);
+                Line_queue::where('section_id','=',$operation->operation_sections_id)->where('section_name','=','Operations section')->where('position','>',$queue->position)->increment('position');
+                return response()->json(['message'=>'get patient from queue','patient'=>$patient,'queue'=>$line_queue]);
+            }
+            Line_queue::create([
+                'patient_id'=>$queue->patient_id,
+                'num_char'=>$queue->num_char,
+                'position'=>$queue->position,
+                'section_name'=>$queue->section_name,
+                'section_id'=>$queue->section_id,
+                'visit_id'=>$queue->visit_id,
+                'wating'=>true
+            ]);
+            Line_queue::where('section_id','=',$operation->operation_sections_id)->where('section_name','=','Operations section')->where('position','>',$queue->position)->increment('position');
+            return response()->json(['message'=>'dont found other patients']);
+        }
+        if($doctor->radiology_section()->exists()){
+            $radiation=Radiation_section::where('available','=',true)->where('doctors_id','=',$doctor->id)->first();
+            $line_queue=Line_queue::where('section_id','=',$radiation->id)->where('section_name','=','Radiation section')->where('position','=',$queue->position+1)->first();
+            if($line_queue){
+                $line_queue->delete();
+                $patient=Patient::where('id','=',$line_queue->patient_id)->first();
+                Line_queue::where('section_id','=',$radiation->id)->where('section_name','=','Radiation section')->where('position','>',$line_queue->position)->decrement('position');
+                $visit_details=Visit_details::where('id','=',$line_queue->visit_id)->first();
+                $visit_details->enterTime=Carbon::now()->format('H:i');
+                Line_queue::create([
+                    'patient_id'=>$queue->patient_id,
+                    'num_char'=>$queue->num_char,
+                    'position'=>$queue->position,
+                    'section_name'=>$queue->section_name,
+                    'section_id'=>$queue->section_id,
+                    'visit_id'=>$queue->visit_id,
+                    'wating'=>true
+                ]);
+                Line_queue::where('section_id','=',$radiation->id)->where('section_name','=','Radiation section')->where('position','>',$queue->position)->increment('position');
+            return response()->json(['message'=>'get patient from queue','patient'=>$patient,'queue'=>$line_queue]);
+            }
+            Line_queue::create([
+                'patient_id'=>$queue->patient_id,
+                'num_char'=>$queue->num_char,
+                'position'=>$queue->position,
+                'section_name'=>$queue->section_name,
+                'section_id'=>$queue->section_id,
+                'visit_id'=>$queue->visit_id,
+                'wating'=>true
+            ]);
+            Line_queue::where('section_id','=',$radiation->id)->where('section_name','=','Radiation section')->where('position','>',$queue->position)->increment('position');
+            return response()->json(['message'=>'dont found other patients']);
+
+        }
+            if($doctor->imaging_section()->exists()){
+            $magnitic=Magnetic_resonnance_imaging::where('available','=',true)->where('doctors_id','=',$doctor->id)->first();
+            $line_queue=Line_queue::where('section_id','=',$magnitic->id)->where('section_name','=','Magnitic section')->where('position','=',$queue->position+1)->first();
+            if($line_queue){
+                $line_queue->delete();
+                $patient=Patient::where('id','=',$line_queue->patient_id)->first();
+                Line_queue::where('section_id','=',$magnitic->id)->where('section_name','=','Magnitic section')->where('position','>',$line_queue->position)->decrement('position');
+                $visit_details=Visit_details::where('id','=',$line_queue->visit_id)->first();
+                $visit_details->enterTime=Carbon::now()->format('H:i');
+                Line_queue::create([
+                    'patient_id'=>$queue->patient_id,
+                    'num_char'=>$queue->num_char,
+                    'position'=>$queue->position,
+                    'section_name'=>$queue->section_name,
+                    'section_id'=>$queue->section_id,
+                    'visit_id'=>$queue->visit_id,
+                    'wating'=>true
+                ]);
+                Line_queue::where('section_id','=',$magnitic->id)->where('section_name','=','Magnitic section')->where('position','>',$queue->position)->increment('position');
+                return response()->json(['message'=>'get patient from queue','patient'=>$patient,'queue'=>$line_queue]);
+            }
+            Line_queue::create([
+                'patient_id'=>$queue->patient_id,
+                'num_char'=>$queue->num_char,
+                'position'=>$queue->position,
+                'section_name'=>$queue->section_name,
+                'section_id'=>$queue->section_id,
+                'visit_id'=>$queue->visit_id,
+                'wating'=>true
+            ]);
+            Line_queue::where('section_id','=',$magnitic->id)->where('section_name','=','Magnitic section')->where('position','>',$queue->position)->increment('position');
+            return response()->json(['message'=>'dont found other patients']);
+        }
+    }
     public function extract_from_queue(){
         $doctor=Auth::guard('doctor')->user();
         $doctor=ModelsDoctor::where('id','=',$doctor->id)->first();
         if($doctor->medical_clinic_doctor()->exists()){
             $medical=medical_clinic_doctor::where('doctor_available','=',true)->where('doctors_id','=',$doctor->id)->first();
             $line_queue=Line_queue::where('section_id','=',$medical->medical_clinic_id)->where('section_name','=','Medical clinic')->orderBy('position','asc')->first();
-            $line_queue->delete();
-            $patient=Patient::where('id','=',$line_queue->patient_id)->first();
-            Line_queue::where('section_id','=',$medical->medical_clinic_id)->where('section_name','=','Medical clinic')->where('position','>',$line_queue->position)->decrement('position');
-            $visit_details=Visit_details::where('id','=',$line_queue->visit_id)->first();
-            $visit_details->enterTime=Carbon::now()->format('H:i');
-            return response()->json(['message'=>'get patient from queue','patient'=>$patient,'queue'=>$line_queue]);
+            if($line_queue){
+                $line_queue->delete();
+                $patient=Patient::where('id','=',$line_queue->patient_id)->first();
+                Line_queue::where('section_id','=',$medical->medical_clinic_id)->where('section_name','=','Medical clinic')->where('position','>',$line_queue->position)->decrement('position');
+                $visit_details=Visit_details::where('id','=',$line_queue->visit_id)->first();
+                $visit_details->enterTime=Carbon::now();
+                $visit_details->save();
+                return response()->json(['message'=>'get patient from queue','patient'=>$patient,'queue'=>$line_queue]);
+            }
+            return response()->json(['message'=>'line queue is empty']);
         }
         if($doctor->operation_section()->exists()){
             $operation=Operation_section::where('available','=',true)->where('doctors_id','=',$doctor->id)->first();
             $line_queue=Line_queue::where('section_id','=',$operation->id)->where('section_name','=','Operations section')->orderBy('position','asc')->first();
-            $line_queue->delete();
-            $patient=Patient::where('id','=',$line_queue->patient_id)->first();
-            Line_queue::where('section_id','=',$operation->id)->where('section_name','=','Operations section')->where('position','>',$line_queue->position)->decrement('position');
-            $visit_details=Visit_details::where('id','=',$line_queue->visit_id)->first();
-            $visit_details->enterTime=Carbon::now()->format('H:i');
-            return response()->json(['message'=>'get patient from queue','patient'=>$patient,'queue'=>$line_queue]);
+            if( $line_queue){
+                $line_queue->delete();
+                $patient=Patient::where('id','=',$line_queue->patient_id)->first();
+                Line_queue::where('section_id','=',$operation->id)->where('section_name','=','Operations section')->where('position','>',$line_queue->position)->decrement('position');
+                $visit_details=Visit_details::where('id','=',$line_queue->visit_id)->first();
+                $visit_details->enterTime=Carbon::now();
+                $visit_details->save();
+                return response()->json(['message'=>'get patient from queue','patient'=>$patient,'queue'=>$line_queue]);
+            }
+            return response()->json(['nessage'=>'line queue is empty']);
         }
         if($doctor->doctor_operation_section()->exists()){
             $operation=Doctor_operation_section::where('available','=',true)->where('doctors_id','=',$doctor->id)->first();
             $line_queue=Line_queue::where('section_id','=',$operation->operation_sections_id)->where('section_name','=','Operations section')->orderBy('position','asc')->first();
-            $line_queue->delete();
-            $patient=Patient::where('id','=',$line_queue->patient_id)->first();
-            Line_queue::where('section_id','=',$operation->id)->where('section_name','=','Operations section')->where('position','>',$line_queue->position)->decrement('position');
-            $visit_details=Visit_details::where('id','=',$line_queue->visit_id)->first();
-            $visit_details->enterTime=Carbon::now()->format('H:i');
-            return response()->json(['message'=>'get patient from queue','patient'=>$patient,'queue'=>$line_queue]);
+            if( $line_queue){
+                $line_queue->delete();
+                $patient=Patient::where('id','=',$line_queue->patient_id)->first();
+                Line_queue::where('section_id','=',$operation->id)->where('section_name','=','Operations section')->where('position','>',$line_queue->position)->decrement('position');
+                $visit_details=Visit_details::where('id','=',$line_queue->visit_id)->first();
+                $visit_details->enterTime=Carbon::now();
+                $visit_details->save();
+                return response()->json(['message'=>'get patient from queue','patient'=>$patient,'queue'=>$line_queue]);
+            }
+            return response()->json(['message'=>'line queue is empty']);
         }
         if($doctor->radiology_section()->exists()){
             $radiation=Radiation_section::where('available','=',true)->where('doctors_id','=',$doctor->id)->first();
             $line_queue=Line_queue::where('section_id','=',$radiation->id)->where('section_name','=','Radiation section')->orderBy('position','asc')->first();
-            $line_queue->delete();
-            $patient=Patient::where('id','=',$line_queue->patient_id)->first();
-            Line_queue::where('section_id','=',$radiation->id)->where('section_name','=','Radiation section')->where('position','>',$line_queue->position)->decrement('position');
-            $visit_details=Visit_details::where('id','=',$line_queue->visit_id)->first();
-            $visit_details->enterTime=Carbon::now()->format('H:i');
-            return response()->json(['message'=>'get patient from queue','patient'=>$patient,'queue'=>$line_queue]);
+            if($line_queue){
+                $line_queue->delete();
+                $patient=Patient::where('id','=',$line_queue->patient_id)->first();
+                Line_queue::where('section_id','=',$radiation->id)->where('section_name','=','Radiation section')->where('position','>',$line_queue->position)->decrement('position');
+                $visit_details=Visit_details::where('id','=',$line_queue->visit_id)->first();
+                $visit_details->enterTime=Carbon::now();
+                $visit_details->save();
+                return response()->json(['message'=>'get patient from queue','patient'=>$patient,'queue'=>$line_queue]);
+            }
+            return response()->json(['message'=>'line queue is empty']);
         }
             if($doctor->imaging_section()->exists()){
             $magnitic=Magnetic_resonnance_imaging::where('available','=',true)->where('doctors_id','=',$doctor->id)->first();
             $line_queue=Line_queue::where('section_id','=',$magnitic->id)->where('section_name','=','Magnitic section')->orderBy('position','asc')->first();
-            $line_queue->delete();
-            $patient=Patient::where('id','=',$line_queue->patient_id)->first();
-            Line_queue::where('section_id','=',$magnitic->id)->where('section_name','=','Magnitic section')->where('position','>',$line_queue->position)->decrement('position');
-            $visit_details=Visit_details::where('id','=',$line_queue->visit_id)->first();
-            $visit_details->enterTime=Carbon::now()->format('H:i');
-            return response()->json(['message'=>'get patient from queue','patient'=>$patient,'queue'=>$line_queue]);
+            if($line_queue){
+                $line_queue->delete();
+                $patient=Patient::where('id','=',$line_queue->patient_id)->first();
+                Line_queue::where('section_id','=',$magnitic->id)->where('section_name','=','Magnitic section')->where('position','>',$line_queue->position)->decrement('position');
+                $visit_details=Visit_details::where('id','=',$line_queue->visit_id)->first();
+                $visit_details->enterTime=Carbon::now();
+                $visit_details->save();
+                return response()->json(['message'=>'get patient from queue','patient'=>$patient,'queue'=>$line_queue]);
+            }
+            return response()->json(['message'=>'line queue is empty']);
         }
     }
 public function doctor_examination(Request $request,Line_queue $line){
@@ -201,6 +459,7 @@ $patient=$line->patient_id;
 $visit_id=$line->visit_id;
 $visit=Visit_details::where('id','=',$visit_id)->first();
 $visit->endTime=Carbon::now()->format('H:i');
+$visit->save();
     $examination=Doctor_examination::create([
         'patient_id'=>$patient,
         'doctors_id'=>$doctor->id,
@@ -221,7 +480,10 @@ $visit->endTime=Carbon::now()->format('H:i');
         'result_examination'=>$request->result_examination,
         'medical_recomendation'=>$request->medical_recomendation
     ]);
-    if(!$request->id_medical_examination->isEmpty()){
+    if(!is_null($request->id_medical_examination)){
+        $sugar = null;
+        $eco = null;
+        $Ecg = null;
         foreach($request->id_medical_examination as $item){
             $exam_name=Medical_examination::where('id','=',$item)->first()->name_examination;
             if($exam_name=='Blood pressure'){
@@ -306,7 +568,7 @@ $visit->endTime=Carbon::now()->format('H:i');
             $medical=Medical_examination::where('name_examination','=','Ecg')->first();
             $validate2=Validator::make($request->all(),[
                 'date'=>'required|date',
-                'image_Ecg'=>'required|array',
+                'image_Ecg'=>'required',
                 'result_Ecg'=>'required'
                ]);
                if($validate2->fails()){
@@ -321,7 +583,6 @@ $visit->endTime=Carbon::now()->format('H:i');
                 'result_Ecg'=>$request->result_Ecg
                ]);
             }}
-
         return response()->json(['message'=>'doctor examination done successfully','examination'=>$examination,'blood pressure'=>$blood,'sugar'=>$sugar,'Eco'=>$eco,'Ecg'=>$Ecg]);
         }
     return response()->json(['message'=>'doctor examination done successfully','examination'=>$examination]);
@@ -352,18 +613,251 @@ public function add_operation(Request $request){
     ]);
     return response()->json(['message'=>'operation added successfully','operation'=>$operation]);
 }
-public function uploadeImage(Request $request)
+public function imaging_report(Request $request,Line_queue $line){
+    $validate=Validator::make($request->all(),[
+        'name_image'=>'required',
+        'image'=>'required|array',
+        'price'=>'required',
+        'medical_diagnosis'=>'required'
+    ]);
+if($validate->fails()){
+    return response()->json(['message'=>$validate->errors()]);
+}
+$doctor=Auth::guard('doctor')->user();
+$magniticId=Magnetic_resonnance_imaging::where('available','=',true)->where('doctors_id','=',$doctor->id)->first()->id;
+$magnitic=Imaging_report::create([
+    'name_image'=>$request->name_image,
+    'magnetic_resonnance_imaging_id'=>$magniticId,
+    'doctors_id'=>$doctor->id,
+    'patient_id'=>$line->patient_id,
+    'image'=>$this->uploadeImage($request),
+    'price'=>$request->price,
+    'medical_diagnosis'=>$request->medical_diagnosis
+]);
+return response()->json(['message'=>$magnitic]);
+}
+public function Radiology_report(Request $request,Line_queue $line){
+    $validate=Validator::make($request->all(),[
+        'name_radiology'=>'required',
+        // 'radiation_section_id'
+        // 'doctors_id',
+        // 'patient_id'
+        'price'=>'required',
+        'image'=>'required|array',
+        'medical_diagnosis'=>'required',
+        'name_radiology'=>'required'
+    ]);
+if($validate->fails()){
+    return response()->json(['message'=>$validate->errors()]);
+}
+$doctor=Auth::guard('doctor')->user();
+$radiationId=Radiation_section::where('available','=',true)->where('doctors_id','=',$doctor->id)->first()->id;
+$radiation=Radiology_report::create([
+    'name_radiology'=>$request->name_radiology,
+    'radiation_section_id'=>$radiationId,
+    'doctors_id'=>$doctor->id,
+    'price'=>$request->price,
+    'image'=>$this->uploadeImage($request),
+    'medical_diagnosis'=>$request->medical_diagnosis,
+    'patient_id'=>$line->patient_id
+]);
+return response()->json(['message'=>$radiation]);
+}
+ public function make_operartion(Request $request ,Patient $patient){
+    $validate=Validator::make($request->all(),[
+        'start_date'=>'required|date',
+        'end_date'=>'required|date',
+        'start_time'=>'required|date_format:H:i',
+        'end_time'=>'required|date_format:H:i',
+        'status_operation'=>'required',
+        'recomendation'=>'required',
+        'id_drugs'=>'required|array'//json convert
+    ]);
+    if($validate->fails()){
+        return response()->json(['message'=>$validate->errors()]);
+    }
+    $doctor=Auth::guard('doctor')->user();
+        $operationId=Doctor_operation_section::where('available','=',true)->where('doctors_id','=',$doctor->id)->first()->id;
+        $medical_operation=Medical_operation::create([
+        'operations_id'=>$operationId,
+        'patient_id'=>$patient->id,
+        'start_date'=>$request->start_date,
+        'end_date'=>$request->end_date,
+        'start_time'=>$request->start_time,
+        'end_time'=>$request->end_time,
+        'status_operation'=>$request->status_operation,
+        'recomendation'=>$request->recomendation,
+        'id_drugs'=>$request->id_drugs,
+        ]);
+        return response()->json(['message'=>$medical_operation]);
+    }
+        public function Request_medical_supplies(Request $request , Patient $patient){
+        $validate=Validator::make($request->all(),[
+        'drugs_supplies_id'=>'required',
+        'quentity'=>'required',
+        'date'=>'required|date'
+        ]);
+        if($validate->fails()){
+            return response()->json(['message'=>$validate->errors()]);
+        }
+        $doctor=Auth::guard('doctor')->user();
+        $operationId=Doctor_operation_section::where('available','=',true)->where('doctors_id','=',$doctor->id)->first()->id;
+        $drugs=Drugs_supplies::where('id','=',$request->drugs_supplies_id)->first();
+        if($drugs){
+            if($drugs->quentity>=$request->quentity){
+                $medical_supplies=Request_medical_supplies::create([
+                    'doctor_id'=>$doctor->id,
+                    'drugs_supplies_id'=>$request->drugs_supplies_id,
+                    'quentity'=>$request->quentity,
+                    'operation_sections_id'=>$operationId,
+                    'patient_id'=>$patient->id,
+                    'date'=>$request->date
+                    ]);
+                    return response()->json(['message'=>'medical supplies that requested','medical supplies'=>$medical_supplies]);
+            }
+            else{
+                return response()->json(['message'=>'quentity not enough']);
+            }
+        }else{
+            return response()->json(['message'=>'drugs not found']);
+        }
+    }
+    public function get_drugs_supplies(){
+        $drugs=Drugs_supplies::select('name','id')->get();
+        $array=[];
+        foreach($drugs as $d){
+            $name=$d->name;
+            $id=$d->id;
+            $array=array(
+                'name'=>$name,
+                'id'=>$id);
+        }
+        return response()->json(['message'=>'all drugs available','drugs'=>$array]);
+    }
+    public function patient_graduation(Request $request, Patient $patient){
+$validate=Validator::make($request->all(),[
+    'out_date'=>'required|date',
+    'out_time'=>'required|date_format:H:i',
+    'recomendation'=>'required',
+]);
+if($validate->fails()){
+    return response()->json(['message'=>$validate->errors()]);
+}
+ $PatientS=Patient::with([
+    'room_stay'
+ ])->find($patient->id);
+
+ if(!$PatientS){
+    return response()->json(['message'=>'not found',404]);
+ }
+ $operation=Doctor_operation_section::where('available','=',true)->
+ where('doctors_id','=',Auth::guard('doctor')->user()->id)->first();
+if($PatientS->room_stay()->exists()){
+    foreach($PatientS->room_stay as $room){
+        $operation_room=Operation_rooms::where('operation_sections_id','=',$operation->operation_sections_id)
+        ->where('id','=',$room->operation_rooms_id)->where('available','=',false)->first();
+        if($operation_room){
+        $RoomNumber=$operation_room->numberRoom;
+        $operation_room=Operation_rooms::where('operation_sections_id','=',$operation->operation_sections_id)
+        ->where('id','=',$room->operation_rooms_id)->where('available','=',false)->where('numberRoom','=',$RoomNumber)->first();
+        $room->out_date=$request->out_date;
+        $room->out_time=$request->out_time;
+        $room->save();
+        $operation_room->available=true;
+        $operation_room->save();
+        $graduation=Patient_graduation::create([
+            'doctors_id'=>Auth::guard('doctor')->user()->id,
+            'patient_id'=>$patient->id,
+            'out_date'=>$request->out_date,
+            'out_time'=>$request->out_time,
+            'recomendation'=>$request->recomendation,
+         ]);
+            return response()->json(['message'=>'patient qraduation','graduation'=>$graduation,'room stay'=>$PatientS->room_stay]);
+        }
+    }
+}
+return response()->json(['message'=>'not found',404]);
+    }
+    public function get_patient_file(Patient $patient){
+        $patientfile=Patient::with([
+            'details_visit',
+            'doctor_examination',
+            'imaging_report',
+            'radiology_report',
+            'result_laboratory',
+            'medical_operation',
+        ])->find($patient->id);
+        return response()->json([
+            'patient'=>$patientfile,
+            'doctor_examination'=>$patientfile->doctor_examination,
+            'imaging_report'=>$patientfile->imaging_report,
+            'radiology_report'=>$patientfile->radiology_report,
+            'result_laboratory'=>$patientfile->result_laboratory,
+            'medical_operation'=>$patientfile->medical_operation
+        ]);
+    }
+    public function uploadeImageDoctor(Request $request)
 {
     $validator = Validator::make($request->all(), [
         'image' => 'required|image|mimes:jpg,png,jpeg,gif,svg|max:2048', // Adding a max size for the image
     ]);
     if ($validator->fails()) {
-        return response()->json(['error' => $validator->errors()], 400);
+        return response()->json(['error' => $validator->errors()], 422);
     }
     $image = $request->file('image');
     $name = uniqid() . '_' . time() . '.' . $image->getClientOriginalExtension();
     $path = $image->storeAs('public/images', $name);
     return  Storage::url($path);
+}
+public function uploadeImage(Request $request){
+    //image image_Ecg,image_eco,
+    $uploadedImages = [];
+    if ($request->hasFile('image_Ecg')) {
+        $images = $request->file('image_Ecg');
+        foreach ($images as $image) {
+            $validator = Validator::make(['image_Ecg' => $image], [
+                'image_Ecg' => 'required|image|mimes:jpg,png,jpeg,gif,svg|max:2048',
+            ]);
+            if ($validator->fails()) {
+                return response()->json(['error' => $validator->errors()], 400);
+            }
+            $name = uniqid() . '_' . time() . '.' . $image->getClientOriginalExtension();
+            $path = $image->storeAs('public/images', $name);
+            array_push($uploadedImages, Storage::url($path));
+        }
+    }
+    elseif($request->hasFile('image_eco')){
+        $images = $request->file('image_eco');
+        foreach ($images as $image) {
+            $validator = Validator::make(['image_eco' => $image], [
+                'image_eco' => 'required|image|mimes:jpg,png,jpeg,gif,svg|max:2048',
+            ]);
+            if ($validator->fails()) {
+                return response()->json(['error' => $validator->errors()], 400);
+            }
+            $name = uniqid() . '_' . time() . '.' . $image->getClientOriginalExtension();
+            $path = $image->storeAs('public/images', $name);
+            array_push($uploadedImages, Storage::url($path));
+        }
+    }
+    elseif($request->hasFile('image')){
+        $images = $request->file('image');
+        foreach ($images as $image) {
+            $validator = Validator::make(['image' => $image], [
+                'image' => 'required|image|mimes:jpg,png,jpeg,gif,svg|max:2048',
+            ]);
+            if ($validator->fails()) {
+                return response()->json(['error' => $validator->errors()], 400);
+            }
+            $name = uniqid() . '_' . time() . '.' . $image->getClientOriginalExtension();
+            $path = $image->storeAs('public/images', $name);
+            array_push($uploadedImages, Storage::url($path));
+        }
+    }
+     else{
+        return response()->json(['error' => 'No image uploaded.'], 400);
+    }
+    return $uploadedImages;
 }
 }
 

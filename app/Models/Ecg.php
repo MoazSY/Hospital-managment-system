@@ -27,7 +27,6 @@ class Ecg extends Model
     {
         return $this->belongsTo(Doctor::class, 'doctors_id');
     }
-
-
+protected $casts=['image_Ecg'=>'array'];
 }
 

@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('warehouse_manager', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('image');
+            $table->string('image')->nullable();
             $table->date('birthdate');
             $table->text('about_him');
             $table->string('phoneNumber');

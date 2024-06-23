@@ -38,6 +38,6 @@ class Eco extends Model
         return $this->belongsTo(Doctor::class, 'doctors_id');
     }
     protected $casts=[
-        'image'=>'array'
+        'image_eco'=>'array'
     ];
 }
