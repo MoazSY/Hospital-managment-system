@@ -66,6 +66,8 @@ public function imaging_section()
 {
     return $this->hasMany(Magnetic_resonnance_imaging::class,'doctors_id');
 }
-
+public function report_patient(){
+    return $this->hasMany(Report_patient_doctor::class,'doctors_id');
+}
 }
 

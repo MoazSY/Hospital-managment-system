@@ -15,6 +15,8 @@ return new class extends Migration
             $table->id();
             $table->foreignId('doctors_id')->references('id')->on('doctors')->onDelete('cascade');
             $table->foreignId('patient_id')->references('id')->on('patient')->onDelete('cascade');
+            $table->integer('section_id');
+            $table->string('section_name');
             $table->text('medical_history')->nullable();
             $table->string('previous_illnesses')->nullable();//array
             $table->text('Current_symptoms');//array

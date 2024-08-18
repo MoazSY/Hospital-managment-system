@@ -11,15 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('consumers', function (Blueprint $table) {
+        Schema::create('patient_ready_accounting', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('patient_id')->references('id')->on('patient')->onDelete('cascade');
-            $table->foreignId('drugs_supplies_id')->references('id')->on('drugs_supplies')->onDelete('cascade');
+            $table->foreignId('patient_id')->references('id')->on('patient_id')->onDelete('cascade');
             $table->foreignId('consumer_employee_id')->references('id')->on('consumer_employee')->onDelete('cascade');
-            $table->foreignId('request_medical_supplies_id')->references('id')->on('request_medical_supplies')->onDelete('cascade');
+            $table->foreignId('accounter_id')->references('id')->on('accounter')->onDelete('cascade');
             $table->foreignId('medical_operation_id')->references('id')->on('medical_operation')->onDelete('cascade');
-            $table->integer('quentity');
-
+            $table->json('consumers_id');
+            $table->boolean('accounting');
             $table->timestamps();
         });
     }
@@ -29,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('consumers');
+        Schema::dropIfExists('patient_ready_accounting');
     }
 };

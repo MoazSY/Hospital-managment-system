@@ -17,8 +17,11 @@ return new class extends Migration
             $table->string('address');
             $table->string('contact_info');
             $table->text('about_him');
+            $table->time('start_time');
+            $table->time('end_time');
+            $table->string('days');//array
+            $table->boolean('available')->nullable();
             $table->foreignId('laboratorys_id')->references('id')->on('laboratorys')->onDelete('cascade');
-
             $table->timestamps();
         });
     }

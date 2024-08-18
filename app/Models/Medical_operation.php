@@ -18,7 +18,8 @@ class Medical_operation extends Model
         'end_time',
         'status_operation',
         'recomendation',
-        'id_drugs'
+        'id_drugs',
+        'doctors_id'
     ];
 
     public function operation()

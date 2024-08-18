@@ -40,6 +40,16 @@ public function update_employee_reseption(Request $request,StoreUserRequest $req
     if($request->hasFile('image')){
    $imageUpdate=ModelsReseption_employee::where('id','=',$employee->id)->first();
         $imageUpdate->image=$this->uploadeImage($request);
+        $imageUpdate->save();
+    }
+    if($request['password']){
+        $validate=Validator::make($request->all(),['password'=>'required|min:8']);
+        if($validate->fails()){
+            return response()->json(['message'=>$validate->errors()]);
+        }
+        $nurse=ModelsReseption_employee::where('id','=',$employee->id)->first();
+        $nurse->password=Hash::make($request->password);
+        $nurse->save();
     }
     $update=ModelsReseption_employee::where('id','=',$employee->id)->first();
     return response()->json(['message'=>'reseption employee update successfuly','update'=>$update]);

@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('operations_id')->references('id')->on('operations')->onDelete('cascade');
             $table->foreignId('patient_id')->references('id')->on('patient')->onDelete('cascade');
+            $table->foreignId('doctors_id')->references('id')->on('doctors')->onDelete('cascade');
             $table->date('start_date');
             $table->date('end_date');
             $table->time('start_time');

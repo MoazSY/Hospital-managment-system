@@ -19,7 +19,9 @@ return new class extends Migration
             $table->integer('quentity');
             $table->foreignId('operation_sections_id')->references('id')->on('operation_sections')->onDelete('cascade');
             $table->foreignId('patient_id')->references('id')->on('patient')->onDelete('cascade');
+            $table->foreignId('medical_operation_id')->references('id')->onDelete('cascade');
             $table->date('date');
+            $table->boolean('status_request')->nullable();
             $table->timestamps();
         });
     }

@@ -66,6 +66,10 @@ public function consumers()
 {
     return $this->hasMany(Consumers::class,'patient_id');
 }
+public function Requests_supplies()
+{
+    return $this->hasMany(Request_medical_supplies::class,'patient_id');
+}
 
 public function bill()
 {

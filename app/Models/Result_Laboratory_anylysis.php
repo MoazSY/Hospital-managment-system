@@ -14,7 +14,8 @@ class Result_Laboratory_anylysis extends Model
         'patient_id',
         'laboratory_anylysis_id',
         'result_date',
-        'result'
+        'result',
+        'for_operations'
     ];
 
     public function laboratory()

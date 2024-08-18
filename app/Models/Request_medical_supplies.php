@@ -16,7 +16,9 @@ class Request_medical_supplies extends Model
         'quentity',
         'operation_sections_id',
         'patient_id',
-        'date'
+        'date',
+        'status_request',
+        'medical_operation_id'
     ];
 
 

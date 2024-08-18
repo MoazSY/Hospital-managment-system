@@ -11,16 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('patient_graduation', function (Blueprint $table) {
+        Schema::create('request_laboratory_analysis', function (Blueprint $table) {
             $table->id();
             $table->foreignId('doctors_id')->references('id')->on('doctors')->onDelete('cascade');
             $table->foreignId('patient_id')->references('id')->on('patient')->onDelete('cascade');
-            $table->foreignId('medical_operation_id')->references('id')->on('medical_operation')->onDelete('cascade');
-            $table->date('out_date');
-            $table->time('out_time');
-            $table->text('recomendation');
+            $table->foreignId('laboratory_anylysis_id')->references('id')->on('laboratory_anylysis')->onDelete('cascade');
             $table->string('section_name');
-            $table->boolean('calc_consumers');
+            $table->string('section_id');
+            $table->date('date');
+            $table->boolean('status_request');
             $table->timestamps();
         });
     }
@@ -30,6 +29,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('patient_graduation');
+        Schema::dropIfExists('request_laboratory_analysis');
     }
 };

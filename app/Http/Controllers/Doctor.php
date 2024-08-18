@@ -28,9 +28,12 @@ use App\Models\Patient_graduation;
 use App\Models\Operation_rooms;
 use App\Models\Stay_operation_rooms;
 use App\Models\Pharmatical_warehouse;
+use App\Models\Result_Laboratory_anylysis;
+use App\Models\Request_laboratory_analysis;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
 
@@ -52,10 +55,19 @@ class Doctor extends Controller
         if($request['userName']){
             ModelsDoctor::where('id','=',$doctor->id)->first()->update($requestuser->only('userName'));
         }
-        if($request['image']){
+        if($request->hasFile('image')){
           $doctorImage=ModelsDoctor::where('id','=',$doctor->id)->first();
             $doctorImage->image=$this->uploadeImageDoctor($request);
             $doctorImage->save();
+        }
+        if($request['password']){
+            $validate=Validator::make($request->all(),['password'=>'required|min:8']);
+            if($validate->fails()){
+                return response()->json(['message'=>$validate->errors()]);
+            }
+            $nurse=ModelsDoctor::where('id','=',$doctor->id)->first();
+            $nurse->password=Hash::make($request->password);
+            $nurse->save();
         }
         $doctorinfo=ModelsDoctor::where('id','=',$doctor->id)->first();
         return response()->json(['message'=>'doctor updated successfully','doctor'=>$doctorinfo]);
@@ -141,7 +153,7 @@ class Doctor extends Controller
     }
     if($doctor->imaging_section()->exists()){
     foreach($doctor->imaging_section as $section){
-        $imagingSections[]=[$section->name,'Imaging Section'];
+        $imagingSections[]=[$section->name,'Magnitic Section'];
     }
 }
  return response()->json([
@@ -183,7 +195,7 @@ class Doctor extends Controller
             $radiation->save();
             return response()->json(['message'=>'doctor available in radiology section','dadiology section'=>$radiation,'section name'=>$sectionName]);
         }
-            if($section=='Imaging Section'){
+            if($section=='Magnitic Section'){
             $imaging=Magnetic_resonnance_imaging::where('name','=',$sectionName)->first();
             $imaging->available=true;
             $imaging->save();
@@ -335,7 +347,6 @@ class Doctor extends Controller
             ]);
             Line_queue::where('section_id','=',$radiation->id)->where('section_name','=','Radiation section')->where('position','>',$queue->position)->increment('position');
             return response()->json(['message'=>'dont found other patients']);
-
         }
             if($doctor->imaging_section()->exists()){
             $magnitic=Magnetic_resonnance_imaging::where('available','=',true)->where('doctors_id','=',$doctor->id)->first();
@@ -463,6 +474,8 @@ $visit->save();
     $examination=Doctor_examination::create([
         'patient_id'=>$patient,
         'doctors_id'=>$doctor->id,
+        'section_id'=>$line->section_id,
+        'section_name'=>$line->section_name,
         'medical_history'=>$request->medical_history,
         'previous_illnesses'=>$request->previous_illnesses,
         'Current_symptoms'=>$request->Current_symptoms,
@@ -476,7 +489,7 @@ $visit->save();
         'place_magnetic'=>$request->place_magnetic,
         'ask_operationAction'=>$request->ask_operationAction,
         'NameActionOperation'=>$request->NameActionOperation,
-        'drugs_id'=>$request->drugs_id,
+        'drugs_id'=>$this->choose_drugs($request),///
         'result_examination'=>$request->result_examination,
         'medical_recomendation'=>$request->medical_recomendation
     ]);
@@ -688,10 +701,11 @@ return response()->json(['message'=>$radiation]);
         'status_operation'=>$request->status_operation,
         'recomendation'=>$request->recomendation,
         'id_drugs'=>$request->id_drugs,
+        'doctors_id'=>Auth::guard('doctor')->user()
         ]);
         return response()->json(['message'=>$medical_operation]);
     }
-        public function Request_medical_supplies(Request $request , Patient $patient){
+        public function Request_medical_supplies(Request $request , Patient $patient,Medical_operation $medical_operation){
         $validate=Validator::make($request->all(),[
         'drugs_supplies_id'=>'required',
         'quentity'=>'required',
@@ -711,7 +725,9 @@ return response()->json(['message'=>$radiation]);
                     'quentity'=>$request->quentity,
                     'operation_sections_id'=>$operationId,
                     'patient_id'=>$patient->id,
-                    'date'=>$request->date
+                    'date'=>$request->date,
+                    'status_request'=>false,
+                    'medical_operation_id'=>$medical_operation->id
                     ]);
                     return response()->json(['message'=>'medical supplies that requested','medical supplies'=>$medical_supplies]);
             }
@@ -734,7 +750,7 @@ return response()->json(['message'=>$radiation]);
         }
         return response()->json(['message'=>'all drugs available','drugs'=>$array]);
     }
-    public function patient_graduation(Request $request, Patient $patient){
+    public function patient_graduation(Request $request, Patient $patient,Medical_operation $Medical_operation){
 $validate=Validator::make($request->all(),[
     'out_date'=>'required|date',
     'out_time'=>'required|date_format:H:i',
@@ -765,18 +781,25 @@ if($PatientS->room_stay()->exists()){
         $room->save();
         $operation_room->available=true;
         $operation_room->save();
+        $section_name=Operation_section::where('id','=',$operation_room->operation_sections_id)->first()->Section_name;
         $graduation=Patient_graduation::create([
             'doctors_id'=>Auth::guard('doctor')->user()->id,
             'patient_id'=>$patient->id,
             'out_date'=>$request->out_date,
             'out_time'=>$request->out_time,
             'recomendation'=>$request->recomendation,
+            'section_name'=>$section_name,
+            'calc_consumers'=>false,
+            'medical_operation_id'=>$Medical_operation
          ]);
             return response()->json(['message'=>'patient qraduation','graduation'=>$graduation,'room stay'=>$PatientS->room_stay]);
         }
     }
 }
 return response()->json(['message'=>'not found',404]);
+    }
+    public function get_all_patient(){
+
     }
     public function get_patient_file(Patient $patient){
         $patientfile=Patient::with([
@@ -795,6 +818,64 @@ return response()->json(['message'=>'not found',404]);
             'result_laboratory'=>$patientfile->result_laboratory,
             'medical_operation'=>$patientfile->medical_operation
         ]);
+    }
+    public function request_laboratory_analysis(Request $request,Patient $patient){
+        $validate=Validator::make($request->all(),[
+            // 'doctors_id',
+            // 'patient_id',
+            'laboratory_anylysis_id'=>'required',
+            'section_name'=>'required',
+            'section_id'=>'required',
+            'date'=>'required|date',
+            // 'status_request'
+        ]);
+        if($validate->fails()){
+            return response()->json(['message'=>$validate->errors()]);
+        }
+        $doctor=Auth::guard('doctor')->user();
+        $operation_id=Doctor_operation_section::where('available','=',true)->where('doctors_id','=',$doctor->id)->first()->id;
+        $requests=Request_laboratory_analysis::create([
+             'doctors_id'=>$doctor->id,
+            'patient_id'=>$patient->id,
+            'laboratory_anylysis_id'=>$request->laboratory_anylysis_id,
+            'section_name'=>'Operation Section',
+            'section_id'=>$operation_id,
+            'date'=>$request->date,
+            'status_request'=>false
+        ]);
+        return response()->json(['message'=>'request laboratory analysis','requests'=>$requests]);
+    }
+        public function show_laboratory_analysis(){
+        $array=[];
+        $requests=Request_laboratory_analysis::where('status_request','=',true)->get();
+        foreach($requests as $R){
+        $id_patient=$R->patient_id;
+        $result=Result_Laboratory_anylysis::where('patient_id','=',$id_patient)->where('for_operations','=',true)->first();
+            $array=array('Result laboratory'=>$result);
+        }
+        return response()->json(['message'=>'all result laboratorys','result'=>$array]);
+    }
+    public function get_report(){
+        $doctor=Auth::guard('doctor')->user();
+        $report=ModelsDoctor::with(['report_patient'])->find($doctor->id);
+        return response()->json(['message'=>'all report for patient from nurses','report'=>$report->report_patient]);
+    }
+    public function show_drugs(){
+        $drugs=Drugs_supplies::all();
+        if(!$drugs->isEmpty()){
+            return response()->json('message'=>'all drugs','drugs'=>$drugs);
+        }
+        return response()->json('message'=>'not found any drugs',404);
+    }
+    public function choose_drugs(Request $request){
+        $drugs=Drugs_supplies::all();
+        $array=[];
+        foreach($drugs as $drug){
+            if($request->id==$drug->id){
+                $array=array($drug->id);
+            }
+        }
+        return $array;
     }
     public function uploadeImageDoctor(Request $request)
 {

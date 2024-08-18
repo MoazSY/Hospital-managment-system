@@ -12,9 +12,13 @@ class Patient_bill extends Model
     protected $fillable=[
         'accounter_id',
         'consumers_price',
-        'operation_price',
-        'patient_id',
         'stay_price',
+        'operation_price',
+        'radiology_report_price',
+        'magnitic_report_price',
+        'laboratory_analysis_price',
+        'doctor_examination_price',
+        'patient_id',
         'total_bill'
     ];
 

@@ -99,7 +99,20 @@ Route::post('Request_medical_supplies/{patient}',[Doctor::class,'Request_medical
 Route::get('get_drugs_supplies',[Doctor::class,'get_drugs_supplies']);
 Route::post('patient_graduation/{patient}',[Doctor::class,'patient_graduation']);
 Route::get('get_patient_file/{patient}',[Doctor::class,'get_patient_file']);
+Route::post('request_laboratory_analysis/{patient}',[Doctor::class,'request_laboratory_analysis']);
+Route::get('show_laboratory_analysis',[Doctor::class,'show_laboratory_analysis']);
 });
+Route::middleware('laboratory')->group(function(){
+Route::get('profile',[Doctor::class,'profile']);
+Route::post('update_profile',[Doctor::class,'update_profile']);
+Route::get('ectract_queue',[Doctor::class,'ectract_queue']);
+Route::post('pass_patient/{line}',[Doctor::class,'pass_patient']);
+Route::get('show_patient_file/{patient}',[Doctor::class,'show_patient_file']);
+Route::post('add_laboratory_analysis',[Doctor::class,'add_laboratory_analysis']);
+Route::post('write_analysis/{patient}',[Doctor::class,'write_analysis']);
+Route::get('show_request_from_operations',[Doctor::class,'show_request_from_operations']);
+});
+
 });
 
 

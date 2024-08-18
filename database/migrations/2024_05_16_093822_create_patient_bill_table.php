@@ -14,10 +14,14 @@ return new class extends Migration
         Schema::create('patient_bill', function (Blueprint $table) {
             $table->id();
             $table->foreignId('accounter_id')->references('id')->on('accounter')->onDelete('cascade');
+            $table->foreignId('patient_id')->references('id')->on('patient')->onDelete('cascade');
             $table->float('consumers_price');
             $table->float('operation_price');
-            $table->foreignId('patient_id')->references('id')->on('patient')->onDelete('cascade');
             $table->float('stay_price');
+            $table->float('radiology_report_price');
+            $table->float('magnitic_report_price');
+            $table->float('laboratory_analysis_price');
+            $table->float('doctor_examination_price');
             $table->float('total_bill');
             $table->timestamps();
         });

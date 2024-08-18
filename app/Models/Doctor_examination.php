@@ -12,6 +12,8 @@ class Doctor_examination extends Model
     protected $fillable=[
         'doctors_id',
         'patient_id',
+        'section_name',
+        'section_id',
         'medical_history',
         'previous_illnesses',
         'Current_symptoms',

@@ -488,10 +488,13 @@ public function update_magnitic_section(Request $request ,Magnetic_resonnance_im
 public function add_laboratory_section(Request $request){
     $validate=Validator::make($request->all(),[
         'type_laboratory'=>'required',
+        'start_time'=>'required|date_format:H:i',
+        'end_time'=>'required|date_format:H:i',
+        'days'=>'required|array',
         'address'=>'required',
         'contact_info'=>'required',
         'about_him'=>'required',
-        'laboratorys_id'=>'required'
+        'laboratorys_id'=>'required',
         ]);
         if($validate->fails()){
             return Response()->json(['message'=>$validate->errors()]);
@@ -501,6 +504,9 @@ public function add_laboratory_section(Request $request){
         'address'=>$request->address,
         'contact_info'=>$request->contact_info,
         'about_him'=>$request->about_him,
+        'start_time'=>$request->start_time,
+        'end_time'=>$request->end_time,
+        'days'=>$request->days,
         'laboratorys_id'=>$request->laboratorys_id
         ]);
         return response()->json(['message'=>'laboratory section added successfully','laboratory section'=>$laboratory_section]);

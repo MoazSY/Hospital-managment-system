@@ -19,6 +19,7 @@ return new class extends Migration
             $table->foreignId('laboratory_anylysis_id')->references('id')->on('laboratory_anylysis')->onDelete('cascade');
             $table->date('result_date');
             $table->string('result');
+            $table->boolean('for_operations')->nullable();
             $table->timestamps();
         });
     }

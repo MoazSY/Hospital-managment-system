@@ -22,11 +22,15 @@ class Laboratory extends Authenticatable
         'userName',
         'password',
         'email',
-    'address'    ];
+        'address'    ];
 
 
         public function result_anylysis()
         {
             return $this->hasMany(Result_Laboratory_anylysis::class);
+        }
+        public function Laboratory_section()
+        {
+            return $this->hasMany(Laboratory_section::class,'laboratorys_id');
         }
 }

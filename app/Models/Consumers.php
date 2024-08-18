@@ -14,7 +14,8 @@ class Consumers extends Model
         'drugs_supplies_id',
         'quentity',
         'consumer_employee_id',
-        'address'
+        'request_medical_supplies_id',
+        'medical_operation_id'
     ];
     /**
      * Get the user that owns the Consumers
